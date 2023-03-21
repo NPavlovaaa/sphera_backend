@@ -1,0 +1,7 @@
+*.pot
+*.py[co]
+__pycache__
+build/
+
+*.idea
+venv/
