@@ -43,7 +43,7 @@ class Cart(models.Model):
 class Favorite(models.Model):
     favorite_id = models.AutoField(primary_key=True)
     product = models.ForeignKey(Product, models.DO_NOTHING)
-    client = models.ForeignKey('Client', models.DO_NOTHING)
+    client = models.ForeignKey(Client, models.DO_NOTHING)
 
     class Meta:
         managed = False

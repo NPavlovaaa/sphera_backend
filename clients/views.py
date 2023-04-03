@@ -20,3 +20,11 @@ class ClientView(APIView):
         serializerClient = ClientSerializer(client)
 
         return Response(serializerClient.data)
+
+    # def post(self, request):
+    #     user = request.POST
+    #
+    #     client = Client.objects.filter(user=user).first()
+    #     serializerClient = ClientSerializer(client)
+    #
+    #     return Response(serializerClient.data)
