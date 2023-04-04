@@ -11,6 +11,10 @@ class Product(models.Model):
     taste = models.CharField(max_length=200, blank=True, null=True)
     processing_method = models.ForeignKey('ProcessingMethod', models.DO_NOTHING)
     quantity = models.IntegerField()
+    acidity = models.IntegerField()
+    density = models.IntegerField()
+    sweetness = models.IntegerField()
+    bitterness = models.IntegerField()
 
     class Meta:
         managed = False

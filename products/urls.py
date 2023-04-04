@@ -4,6 +4,9 @@ from products.views import *
 
 router = routers.DefaultRouter()
 router.register(r'products', ProductListViewSet)
+router.register(r'roasting', RoastingMethodsViewSet)
+router.register(r'processing', ProcessingMethodsViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),
