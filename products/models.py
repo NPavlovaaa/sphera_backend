@@ -70,7 +70,6 @@ class Weight(models.Model):
         db_table = 'weight'
 
 
-
 class WeightSelection(models.Model):
     weight_selection_id = models.AutoField(primary_key=True)
     product = models.ForeignKey('Product', models.DO_NOTHING)

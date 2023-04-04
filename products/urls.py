@@ -6,6 +6,9 @@ router = routers.DefaultRouter()
 router.register(r'products', ProductListViewSet)
 router.register(r'roasting', RoastingMethodsViewSet)
 router.register(r'processing', ProcessingMethodsViewSet)
+router.register(r'variety', VarietySerializer)
+router.register(r'weight_selection', WeightSelectionViewSet)
+router.register(r'weight', WeightViewSet)
 
 
 urlpatterns = [
