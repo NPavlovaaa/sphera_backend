@@ -15,6 +15,7 @@ class Product(models.Model):
     density = models.IntegerField()
     sweetness = models.IntegerField()
     bitterness = models.IntegerField()
+    raiting = models.FloatField()
 
     class Meta:
         managed = False
@@ -33,7 +34,7 @@ class Variety(models.Model):
 
 class RoastingMethod(models.Model):
     roasting_method_id = models.AutoField(primary_key=True)
-    roasting_method_name = models.CharField(max_length=30)
+    roasting_method_name = models.CharField(max_length=500)
     roasting_method_description = models.TextField(blank=True, null=True)
 
     class Meta:

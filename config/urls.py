@@ -4,6 +4,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from clients.views import ClientView
 from users.views import LoginAPIView, UserView, LogoutView
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -18,5 +21,8 @@ urlpatterns = [
     path('login/', LoginAPIView.as_view()),
     path('authUser/', UserView.as_view()),
     path('account/', ClientView.as_view()),
-    path('logout/', LogoutView.as_view()),
 ]
+
+if settings.DEBUG:
+        urlpatterns += static(settings.MEDIA_URL,
+                              document_root=settings.MEDIA_ROOT)

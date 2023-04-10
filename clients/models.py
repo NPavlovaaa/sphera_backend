@@ -10,7 +10,7 @@ class Client(models.Model):
     last_name = models.CharField(max_length=150)
     phone = models.CharField(unique=True, max_length=11)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING)
-    avatar = models.CharField(max_length=100, blank=True, null=True)
+    avatar = models.ImageField(upload_to='images/', blank=True, null=True)
     birthday = models.DateField(null=True)
     level = models.ForeignKey('Level', models.DO_NOTHING)
     scores = models.IntegerField()
@@ -43,7 +43,7 @@ class Cart(models.Model):
 class Favorite(models.Model):
     favorite_id = models.AutoField(primary_key=True)
     product = models.ForeignKey(Product, models.DO_NOTHING)
-    client = models.ForeignKey(Client, models.DO_NOTHING)
+    client = models.ForeignKey('Client', models.DO_NOTHING)
 
     class Meta:
         managed = False

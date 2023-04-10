@@ -17,14 +17,6 @@ class ClientView(APIView):
 
         payload = jwt.decode(token, key="secret", algorithms=['HS256'])
         client = Client.objects.filter(user=payload['id']).first()
-        serializerClient = ClientSerializer(client)
+        serializer_class = ClientSerializer(client)
 
-        return Response(serializerClient.data)
-
-    # def post(self, request):
-    #     user = request.POST
-    #
-    #     client = Client.objects.filter(user=user).first()
-    #     serializerClient = ClientSerializer(client)
-    #
-    #     return Response(serializerClient.data)
+        return Response(serializer_class.data)

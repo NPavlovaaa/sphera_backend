@@ -13,4 +13,5 @@ router.register(r'weight', WeightViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('products/<int:id>/', ProductListItemView.as_view(), name=''),
 ]

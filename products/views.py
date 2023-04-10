@@ -1,3 +1,4 @@
+from django import views
 from products.models import ProcessingMethod, Product, RoastingMethod, Variety, Weight, WeightSelection
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -33,3 +34,11 @@ class WeightSelectionViewSet(ModelViewSet):
 class WeightViewSet(ModelViewSet):
     queryset = Weight.objects.all()
     serializer_class = WeightSerializer
+
+
+class ProductListItemView(views.View):
+
+    def get(request, id):
+        product = Product.objects.get(product_id=id)
+        serializer_class = ProductSerializer(product)
+        return Response(serializer_class)
