@@ -41,4 +41,4 @@ class ProductListItemView(views.View):
     def get(request, id):
         product = Product.objects.get(product_id=id)
         serializer_class = ProductSerializer(product)
-        return Response(serializer_class)
+        return Response(serializer_class.data)
