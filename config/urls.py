@@ -21,6 +21,7 @@ urlpatterns = [
     path('login/', LoginAPIView.as_view()),
     path('authUser/', UserView.as_view()),
     path('account/', ClientView.as_view()),
+    path('logout/', LogoutView.as_view()),
 ]
 
 if settings.DEBUG:
