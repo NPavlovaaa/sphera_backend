@@ -14,10 +14,11 @@ from users.models import User
 from users.serializer import UserSerializer
 
 from django.contrib.auth.hashers import make_password
-
+from django.contrib.auth.hashers import check_password
 from django.db import transaction
 from rest_framework import status
 
+from django.contrib.auth import authenticate, login
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
@@ -62,9 +63,14 @@ class CreateUserAndClientModelView(APIView):  # crud, patch, head
 class LoginAPIView(APIView):
     def post(self, request):
         username = request.data['username']
-        password = request.data['password']
+        passw = request.data['password']
 
-        user = User.objects.filter(username=username, password=password).first()
+        username_check = User.objects.filter(username=username).first()
+
+        if check_password(passw, username_check.password):
+            user = username_check
+        else:
+            user: None
 
         if user is None:
             raise AuthenticationFailed('User not found!')
@@ -83,6 +89,7 @@ class LoginAPIView(APIView):
         response.data = {
             'jwt': token
         }
+
         return response
 
 
@@ -100,8 +107,12 @@ class UserView(APIView):
             raise AuthenticationFailed('Вы не авторизованы!')
 
         user = User.objects.filter(user_id=payload['id']).first()
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
+        client = Client.objects.get(user=user.user_id)
+        serializer_user = UserSerializer(user)
+        serializer_client = ClientSerializer(client)
+
+        data = {'user': serializer_user.data, 'client': serializer_client.data}
+        return Response(data)
 
 
 class LogoutView(APIView):

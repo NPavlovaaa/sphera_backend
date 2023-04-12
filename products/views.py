@@ -62,8 +62,8 @@ class ProductListItemView(views.View):
         return Response(serializer_class.data)
 
 
-class ProccesListView(views.View):
-    def get(request):
-        processing_methods = Product.PROCESSING_METHODS
-        print(processing_methods)
-        return Response(processing_methods)
+# class ProccesListView(views.View):
+#     def get(request):
+#         processing_methods = Product.PROCESSING_METHODS
+#         print(processing_methods)
+#         return Response(processing_methods)
