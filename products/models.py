@@ -2,10 +2,6 @@ from django.db import models
 
 
 class Product(models.Model):
-    # PROCESSING_METHODS = (
-    #     ('Натуральный', 'Натуральный'),
-    #     ('Мытый', 'Мытый'),
-    # )
     product_id = models.AutoField(primary_key=True)
     product_description = models.CharField(max_length=500, blank=True, null=True)
     product_name = models.CharField(max_length=100)
@@ -13,7 +9,6 @@ class Product(models.Model):
     roasting_method = models.ForeignKey('RoastingMethod', models.DO_NOTHING)
     variety = models.ForeignKey('Variety', models.DO_NOTHING)
     taste = models.CharField(max_length=200, blank=True, null=True)
-    # processing_method = models.CharField(max_length=20, choices=PROCESSING_METHODS)
     processing_method = models.ForeignKey('ProcessingMethod', models.DO_NOTHING)
     quantity = models.IntegerField()
     acidity = models.IntegerField()

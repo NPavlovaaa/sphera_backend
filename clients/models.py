@@ -1,6 +1,5 @@
 from django.db import models
 
-from config import settings
 from products.models import Product
 from users.models import User
 

@@ -1,12 +1,10 @@
 import datetime
-from django import views
 import jwt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.viewsets import ModelViewSet
 
-from django.http import HttpResponse, JsonResponse
 from clients.models import Client
 from clients.serializer import ClientSerializer
 
@@ -18,21 +16,22 @@ from django.contrib.auth.hashers import check_password
 from django.db import transaction
 from rest_framework import status
 
-from django.contrib.auth import authenticate, login
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-class CreateUserAndClientModelView(APIView):  # crud, patch, head
+class CreateUserAndClientModelView(APIView):
     def post(self, request, **kwargs):
         if request.method == 'POST':
             user_data = {'user_id': request.data['user_id'],
                          'password': request.data['password'],
-                         'username': request.data['username'],
+                         'username': request.data['username']
                          }
             client_data = {'first_name': request.data['first_name'], 'last_name': request.data['last_name'], 'phone': request.data['phone'],
-                       'birthday': request.data['birthday'], 'level': request.data['level'], 'scores': request.data['scores'], 'avatar': request.data['avatar'], 'user': request.data['user_id']}
+                            'birthday': request.data['birthday'], 'level': request.data['level'], 'scores': request.data['scores'],
+                            'avatar': request.data['avatar'], 'user': request.data['user_id']
+                            }
             user_serializer = UserSerializer(data=user_data)
             if user_serializer.is_valid():
                 with transaction.atomic():
