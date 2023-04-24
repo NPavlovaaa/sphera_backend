@@ -1,6 +1,6 @@
 from django.db import models
 
-from products.models import Product
+from products.models import Product, WeightSelection
 from users.models import User
 
 
@@ -32,6 +32,7 @@ class Level(models.Model):
 class Cart(models.Model):
     cart_id = models.AutoField(primary_key=True)
     product = models.ForeignKey(Product, models.DO_NOTHING, null=True)
+    weight_selection = models.ForeignKey(WeightSelection, models.DO_NOTHING)
     product_count = models.IntegerField(null=True)
     client = models.ForeignKey('Client', models.DO_NOTHING)
 

@@ -64,7 +64,7 @@ class Category(models.Model):
 
 class Weight(models.Model):
     weight_id = models.AutoField(primary_key=True)
-    weight = models.CharField(max_length=150)
+    weight = models.IntegerField()
 
     class Meta:
         managed = False

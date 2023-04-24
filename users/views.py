@@ -21,6 +21,7 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
 class CreateUserAndClientModelView(APIView):
     def post(self, request, **kwargs):
         if request.method == 'POST':
@@ -76,7 +77,7 @@ class LoginAPIView(APIView):
 
         payload = {
             'id': user.user_id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=180),
             'iat': datetime.datetime.utcnow()
         }
 
