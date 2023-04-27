@@ -5,15 +5,19 @@ from users.models import User
 
 
 class Client(models.Model):
+    def upload_to(instance, filename):
+        return 'avatars/{filename}'.format(filename=filename)
+
     client_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     phone = models.CharField(unique=True, max_length=11)
     user = models.ForeignKey(User, models.DO_NOTHING)
-    avatar = models.CharField(max_length=150, blank=True, null=True)
+    avatar = models.ImageField(upload_to=upload_to, blank=True, null=True)
     birthday = models.DateField(null=True)
     level = models.ForeignKey('Level', models.DO_NOTHING)
     scores = models.IntegerField()
+
 
     class Meta:
         managed = False

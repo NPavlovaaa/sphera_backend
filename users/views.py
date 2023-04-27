@@ -1,6 +1,7 @@
 import datetime
 import jwt
 from rest_framework.views import APIView
+from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.viewsets import ModelViewSet
@@ -15,14 +16,16 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
 from rest_framework import status
-
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.contrib.auth import authenticate
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
-class CreateUserAndClientModelView(APIView):
+class CreateUserAndClientModelView(CreateAPIView):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
     def post(self, request, **kwargs):
         if request.method == 'POST':
             user_data = {'user_id': request.data['user_id'],
@@ -30,8 +33,8 @@ class CreateUserAndClientModelView(APIView):
                          'username': request.data['username']
                          }
             client_data = {'first_name': request.data['first_name'], 'last_name': request.data['last_name'], 'phone': request.data['phone'],
-                            'birthday': request.data['birthday'], 'level': request.data['level'], 'scores': request.data['scores'],
-                            'avatar': request.data['avatar'], 'user': request.data['user_id']
+                            'birthday': request.data['birthday'], 'level': 1, 'scores': 0,
+                            'avatar': request.FILES.get('avatar'), 'user': request.data['user_id']
                             }
             user_serializer = UserSerializer(data=user_data)
             if user_serializer.is_valid():
@@ -53,14 +56,15 @@ class CreateUserAndClientModelView(APIView):
                             avatar = client_serializer.validated_data['avatar'],
                             user = client_serializer.validated_data['user']
                             )
-                        user.save()
-                        client.save()
+                        # user.save()
+                        # client.save()
                         return Response(client_serializer.data, status=status.HTTP_201_CREATED)
                     return Response(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginAPIView(APIView):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
     def post(self, request):
         username = request.data['username']
         passw = request.data['password']
@@ -69,6 +73,8 @@ class LoginAPIView(APIView):
 
         if check_password(passw, username_check.password):
             user = username_check
+            # user = authenticate(request, username=username, password=passw)
+            # login(request, user)
         else:
             user: None
 
@@ -94,7 +100,9 @@ class LoginAPIView(APIView):
 
 
 class UserView(APIView):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
     def get(self, request):
+        print(request.user)
         token = request.COOKIES.get('jwt')
 
         if not token:

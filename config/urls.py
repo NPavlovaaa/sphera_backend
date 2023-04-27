@@ -15,6 +15,7 @@ urlpatterns = [
     path('', include('users.urls')),
     path('', include('clients.urls')),
     path('', include('products.urls')),
+    path('', include('orders.urls')),
     path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/v1/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
@@ -22,7 +23,7 @@ urlpatterns = [
     path('authUser/', UserView.as_view()),
     path('account/', ClientView.as_view()),
     path('logout/', LogoutView.as_view()),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
         urlpatterns += static(settings.MEDIA_URL,

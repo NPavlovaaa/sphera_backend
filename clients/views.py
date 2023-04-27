@@ -2,13 +2,14 @@ import jwt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from clients.models import Client, Cart
-from clients.serializer import ClientSerializer, CartSerializer
+from clients.models import Client, Cart, Favorite
+from clients.serializer import ClientSerializer, CartSerializer, FavoriteSerializer
 from django.db import transaction
 from rest_framework import status
 
 from products.models import ProcessingMethod, Product, RoastingMethod, Weight, WeightSelection
 from products.serializer import ProcessingMethodSerializer, ProductSerializer, RoastingMethodSerializer, WeightSelectionSerializer, WeightSerializer
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 class ClientViewSet(ModelViewSet):
     queryset = Client.objects.all()
@@ -26,11 +27,13 @@ class ClientView(APIView):
         return Response(serializer_class.data)
 
 class CartViewSet(ModelViewSet):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
 
 class CartView(APIView):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
     def get(self, request, id):
         data = Cart.objects.filter(client=id)
         carts = []
@@ -58,8 +61,12 @@ class CartView(APIView):
                           'weight_selection': weight_selection_serializer.data['weight_selection_id']})
         return Response(carts)
 
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
     def post(self, request, **kwargs):
         if request.method == 'POST':
+            product =  WeightSelection.objects.get(weight_selection_id=request.data['weight_selection'])
+            print(request.data)
+            print(product)
             cart_serializer = CartSerializer(data=request.data)
             if cart_serializer.is_valid():
                 with transaction.atomic():
@@ -75,6 +82,7 @@ class CartView(APIView):
 
 
 class ProductInCartView(APIView):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
     def get(self, request, product, client, weight_selection):
         cart = Cart.objects.get(client=client, product=product, weight_selection=weight_selection)
         cart_serializer = CartSerializer(cart)
@@ -83,3 +91,19 @@ class ProductInCartView(APIView):
         else:
             return Response(cart_serializer.errors)
 
+
+class FavoriteViewSet(ModelViewSet):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteSerializer
+
+
+class FavoriteView(APIView):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    def get(self, request, id):
+        favorite = Favorite.objects.filter(client=id)
+        favorites = []
+        for item in favorite:
+            favorite_serializer = FavoriteSerializer(item)
+            favorites.append(favorite_serializer.data)
+        return Response(favorites)
