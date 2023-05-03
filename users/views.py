@@ -102,7 +102,6 @@ class LoginAPIView(APIView):
 class UserView(APIView):
     parser_classes = (MultiPartParser,FormParser,JSONParser)
     def get(self, request):
-        print(request.user)
         token = request.COOKIES.get('jwt')
 
         if not token:

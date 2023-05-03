@@ -26,6 +26,7 @@ class ClientView(APIView):
 
         return Response(serializer_class.data)
 
+
 class CartViewSet(ModelViewSet):
     parser_classes = (MultiPartParser,FormParser,JSONParser)
     queryset = Cart.objects.all()
@@ -34,8 +35,11 @@ class CartViewSet(ModelViewSet):
 
 class CartView(APIView):
     parser_classes = (MultiPartParser,FormParser,JSONParser)
-    def get(self, request, id):
-        data = Cart.objects.filter(client=id)
+    def get(self, request, id, cart):
+        if cart == 1:
+            data = Cart.objects.filter(client=id, active=True)
+        else:
+            data = Cart.objects.filter(client=id, active=False)
         carts = []
         for item in data:
             cart_serializer = CartSerializer(item)
@@ -58,25 +62,22 @@ class CartView(APIView):
             carts.append({'cart_id': cart_serializer.data['cart_id'], 'product': product_serializer.data, 'count': cart_serializer.data['product_count'],
                           'weight': weight_serializer.data['weight'], 'price': weight_selection_serializer.data['price'] * cart_serializer.data['product_count'],
                           'roasting': roasting_serializer.data['roasting_method_name'], 'processing': processing_serializer.data['processing_method_name'],
-                          'weight_selection': weight_selection_serializer.data['weight_selection_id']})
+                          'weight_selection': weight_selection_serializer.data['weight_selection_id'], 'order': cart_serializer.data['order']})
         return Response(carts)
 
     parser_classes = (MultiPartParser,FormParser,JSONParser)
     def post(self, request, **kwargs):
         if request.method == 'POST':
-            product =  WeightSelection.objects.get(weight_selection_id=request.data['weight_selection'])
-            print(request.data)
-            print(product)
             cart_serializer = CartSerializer(data=request.data)
             if cart_serializer.is_valid():
                 with transaction.atomic():
-                    cart = Cart.objects.create(
+                    Cart.objects.create(
                         client = cart_serializer.validated_data['client'],
                         weight_selection = cart_serializer.validated_data['weight_selection'],
                         product_count = 1,
-                        product =  WeightSelection.objects.get(weight_selection_id=cart_serializer.validated_data['weight_selection'].weight_selection_id).product
+                        product =  WeightSelection.objects.get(weight_selection_id=cart_serializer.validated_data['weight_selection'].weight_selection_id).product,
+                        active = True
                         )
-                    cart.save()
                     return Response(cart_serializer.data, status=status.HTTP_201_CREATED)
             return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -84,12 +85,9 @@ class CartView(APIView):
 class ProductInCartView(APIView):
     parser_classes = (MultiPartParser,FormParser,JSONParser)
     def get(self, request, product, client, weight_selection):
-        cart = Cart.objects.get(client=client, product=product, weight_selection=weight_selection)
+        cart = Cart.objects.get(client=client, product=product, weight_selection=weight_selection, active=True)
         cart_serializer = CartSerializer(cart)
-        if cart_serializer.data:
-            return Response(cart_serializer.data)
-        else:
-            return Response(cart_serializer.errors)
+        return Response(cart_serializer.data)
 
 
 class FavoriteViewSet(ModelViewSet):
@@ -100,7 +98,7 @@ class FavoriteViewSet(ModelViewSet):
 
 class FavoriteView(APIView):
     parser_classes = (MultiPartParser,FormParser,JSONParser)
-    def get(self, request, id):
+    def get(self, id):
         favorite = Favorite.objects.filter(client=id)
         favorites = []
         for item in favorite:

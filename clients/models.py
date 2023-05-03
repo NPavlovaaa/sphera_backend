@@ -2,7 +2,7 @@ from django.db import models
 
 from products.models import Product, WeightSelection
 from users.models import User
-
+from orders.models import Order
 
 class Client(models.Model):
     def upload_to(instance, filename):
@@ -39,6 +39,8 @@ class Cart(models.Model):
     weight_selection = models.ForeignKey(WeightSelection, models.DO_NOTHING)
     product_count = models.IntegerField(null=True)
     client = models.ForeignKey('Client', models.DO_NOTHING)
+    order = models.ForeignKey(Order, models.DO_NOTHING, null=True)
+    active = models.BooleanField(null=True, blank=True)
 
     class Meta:
         managed = False

@@ -1,7 +1,5 @@
 from django.db import models
 
-from clients.models import Client
-
 
 class DeliveryMethod(models.Model):
     def upload_to(instance, filename):
@@ -17,15 +15,14 @@ class DeliveryMethod(models.Model):
         db_table = 'delivery_methods'
 
 
-class Orders(models.Model):
+class Order(models.Model):
     order_id = models.AutoField(primary_key=True)
     order_sum = models.IntegerField()
     status = models.ForeignKey('Status', models.DO_NOTHING)
     delivery = models.ForeignKey('DeliveryMethod', models.DO_NOTHING)
-    order_date = models.DateTimeField()
+    order_date = models.DateTimeField(blank=True, null=True)
     delivery_date = models.DateTimeField(blank=True, null=True)
-    dispatch_date = models.DateTimeField()
-    client = models.ForeignKey(Client, models.DO_NOTHING)
+    dispatch_date = models.DateTimeField(blank=True, null=True)
     package = models.CharField(max_length=100, blank=True, null=True)
     address = models.CharField(max_length=200)
 
