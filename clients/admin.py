@@ -4,7 +4,7 @@ from clients.models import *
 
 # Register your models here.
 class ClientsAdmin(admin.ModelAdmin):
-    list_display = ('client_id', 'first_name', 'last_name', 'phone', 'user_id', 'avatar',
+    list_display = ('client_id', 'first_name', 'last_name', 'phone', 'user_id',
                     'birthday', 'level_id', 'scores')
 
 

@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.viewsets import ModelViewSet
 
-from clients.models import Client
-from clients.serializer import ClientSerializer
+from clients.models import Client, Level
+from clients.serializer import ClientSerializer, LevelSerializer
 
 from users.models import User
 from users.serializer import UserSerializer
@@ -30,34 +30,34 @@ class CreateUserAndClientModelView(CreateAPIView):
         if request.method == 'POST':
             user_data = {'user_id': request.data['user_id'],
                          'password': request.data['password'],
-                         'username': request.data['username']
+                         'username': request.data['username'],
+                         'avatar': request.FILES.get('avatar'),
+                         'role': 2
                          }
             client_data = {'first_name': request.data['first_name'], 'last_name': request.data['last_name'], 'phone': request.data['phone'],
-                            'birthday': request.data['birthday'], 'level': 1, 'scores': 0,
-                            'avatar': request.FILES.get('avatar'), 'user': request.data['user_id']
+                            'birthday': request.data['birthday'], 'level': 1, 'scores': 0, 'user': request.data['user_id']
                             }
             user_serializer = UserSerializer(data=user_data)
             if user_serializer.is_valid():
                 with transaction.atomic():
-                    user = User.objects.create(
+                    User.objects.create(
                         user_id = user_serializer.validated_data['user_id'],
                         password = make_password(user_serializer.validated_data['password']),
-                        username = user_serializer.validated_data['username']
-                        )
+                        username = user_serializer.validated_data['username'],
+                        avatar = user_serializer.validated_data['avatar'],
+                        role = user_serializer.validated_data['role']
+                    )
                     client_serializer = ClientSerializer(data=client_data)
                     if client_serializer.is_valid():
-                        client = Client.objects.create(
+                        Client.objects.create(
                             first_name = client_serializer.validated_data['first_name'],
                             last_name = client_serializer.validated_data['last_name'],
                             phone = client_serializer.validated_data['phone'],
                             birthday = client_serializer.validated_data['birthday'],
                             level = client_serializer.validated_data['level'],
                             scores = client_serializer.validated_data['scores'],
-                            avatar = client_serializer.validated_data['avatar'],
                             user = client_serializer.validated_data['user']
-                            )
-                        # user.save()
-                        # client.save()
+                        )
                         return Response(client_serializer.data, status=status.HTTP_201_CREATED)
                     return Response(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -114,11 +114,17 @@ class UserView(APIView):
             raise AuthenticationFailed('Вы не авторизованы!')
 
         user = User.objects.filter(user_id=payload['id']).first()
-        client = Client.objects.get(user=user.user_id)
         serializer_user = UserSerializer(user)
-        serializer_client = ClientSerializer(client)
+        print(serializer_user.data['role'] == 2)
+        if serializer_user.data['role'] == 2:
+            client = Client.objects.get(user=user.user_id)
+            serializer_client = ClientSerializer(client)
+            level = Level.objects.get(level_id=serializer_client.data['level'])
+            serializer_level = LevelSerializer(level)
+            data = {'user': serializer_user.data, 'client': serializer_client.data, 'level': serializer_level.data}
+        else:
+            data = {'user': serializer_user.data}
 
-        data = {'user': serializer_user.data, 'client': serializer_client.data}
         return Response(data)
 
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from clients.models import Client, Cart, Favorite
+from clients.models import Client, Cart, Favorite, Level
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -18,4 +18,10 @@ class CartSerializer(serializers.ModelSerializer):
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
+        fields = "__all__"
+
+
+class LevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Level
         fields = "__all__"
