@@ -105,3 +105,35 @@ class FavoriteView(APIView):
             favorite_serializer = FavoriteSerializer(item)
             favorites.append(favorite_serializer.data)
         return Response(favorites)
+
+
+
+class CartAdminView(APIView):
+    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    def get(self, request):
+
+        data = Cart.objects.filter(active=False)
+
+        carts = []
+        for item in data:
+            cart_serializer = CartSerializer(item)
+            product = Product.objects.get(product_id=cart_serializer.data['product'])
+            product_serializer = ProductSerializer(product)
+
+            weight_selection =  WeightSelection.objects.get(weight_selection_id=cart_serializer.data['weight_selection'])
+            weight_selection_serializer = WeightSelectionSerializer(weight_selection)
+
+            weight = Weight.objects.get(weight_id=weight_selection_serializer.data['weight'])
+            weight_serializer = WeightSerializer(weight)
+
+            roasting = RoastingMethod.objects.get(roasting_method_id=product_serializer.data['roasting_method'])
+            roasting_serializer = RoastingMethodSerializer(roasting)
+
+            processing = ProcessingMethod.objects.get(processing_method_id=product_serializer.data['processing_method'])
+            processing_serializer = ProcessingMethodSerializer(processing)
+
+            carts.append({'cart_id': cart_serializer.data['cart_id'], 'product': product_serializer.data, 'count': cart_serializer.data['product_count'],
+                          'weight': weight_serializer.data['weight'], 'price': weight_selection_serializer.data['price'] * cart_serializer.data['product_count'],
+                          'roasting': roasting_serializer.data['roasting_method_name'], 'processing': processing_serializer.data['processing_method_name'],
+                          'weight_selection': weight_selection_serializer.data['weight_selection_id'], 'order': cart_serializer.data['order']})
+        return Response(carts)

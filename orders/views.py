@@ -1,10 +1,11 @@
 from django.shortcuts import render
+import jwt
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from clients.models import Cart, Client
-from clients.serializer import CartSerializer
+from clients.serializer import CartSerializer, ClientSerializer
 from config import settings
 
 from orders.models import DeliveryMethod, Order, Status
@@ -14,6 +15,10 @@ from django.db import transaction
 from django.utils import dateformat
 
 from products.models import Product
+from rest_framework.exceptions import AuthenticationFailed
+
+from users.models import User
+from users.serializer import UserSerializer
 
 # Форматирование даты
 class DeliveryMethodViewSet(ModelViewSet):
@@ -29,7 +34,6 @@ class OrderViewSet(ModelViewSet):
 class OrderView(APIView):
     def get(self, request, id):
         carts = Cart.objects.filter(client=id, active=False)
-        # orders = Order.objects.all()
         data_orders = []
         orders = []
         unique = []
@@ -45,8 +49,6 @@ class OrderView(APIView):
                 unique.append(item)
 
         for item in unique:
-            # carts = Cart.objects.filter(client=id, active=False, order=item['order_id'])
-            # serializer_cart = CartSerializer(carts)
             order = Order.objects.get(order_id=item['order_id'])
             serializer_order = OrderSerializer(order)
 
@@ -69,7 +71,6 @@ class OrderView(APIView):
             }
 
             serializer_class = OrderSerializer(data=data)
-            print(serializer_class.is_valid())
             if serializer_class.is_valid():
                 with transaction.atomic():
                     order = Order.objects.create(
@@ -86,3 +87,50 @@ class OrderView(APIView):
                         Cart.objects.filter(cart_id=item['cart_id']).update(order=order.order_id, active=False)
                 return Response(serializer_class.data)
             return Response(serializer_class.errors)
+
+
+class OrdersAdminView(APIView):
+    def get(self, request, token):
+        if not token:
+            raise AuthenticationFailed('Вы не авторизованы!!')
+
+        try:
+            payload = jwt.decode(token, key="secret", algorithms=['HS256'])
+
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('Вы не авторизованы!')
+
+        user = User.objects.filter(user_id=payload['id']).first()
+
+        if user:
+            carts = Cart.objects.filter(active=False)
+            data_orders = []
+            orders = []
+            unique = []
+
+            for item in carts:
+                serializer_cart = CartSerializer(item)
+                get_order = Order.objects.get(order_id=serializer_cart.data['order'])
+                serializer_order = OrderSerializer(get_order)
+                data_orders.append(serializer_order.data)
+
+            for item in data_orders:
+                if item not in unique:
+                    unique.append(item)
+
+            for item in unique:
+                order = Order.objects.get(order_id=item['order_id'])
+                serializer_order = OrderSerializer(order)
+
+                order_date = dateformat.format(order.order_date, settings.DATE_FORMAT)
+                delivery_date = dateformat.format(order.delivery_date, settings.DATE_FORMAT)
+
+                status = Status.objects.get(status_id=serializer_order.data['status'])
+                serializer_status = StatusSerializer(status)
+
+                client = Client.objects.get(client_id=serializer_cart.data['client'])
+                serializer_client = ClientSerializer(client)
+
+                orders.append({'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::], 'delivery_date': delivery_date[1::], 'client': serializer_client.data})
+
+            return Response(orders)

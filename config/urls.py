@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
 from clients.views import ClientView
-from users.views import LoginAPIView, UserView, LogoutView
+from users.views import LoginAPIView, LogoutView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -20,7 +20,7 @@ urlpatterns = [
     path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/v1/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('login/', LoginAPIView.as_view()),
-    path('authUser/', UserView.as_view()),
+    # path('authUser/', UserView.as_view()),
     path('account/', ClientView.as_view()),
     path('logout/', LogoutView.as_view()),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

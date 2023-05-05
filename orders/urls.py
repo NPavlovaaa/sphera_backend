@@ -13,4 +13,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('create_order/', OrderView.as_view()),
     path('my_orders/<int:id>/', OrderView.as_view(), name=''),
+    path('admin_orders/<str:token>/', OrdersAdminView.as_view(), name=''),
 ]

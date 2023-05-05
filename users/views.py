@@ -63,70 +63,75 @@ class CreateUserAndClientModelView(CreateAPIView):
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginAPIView(APIView):
+class LoginView(APIView):
     parser_classes = (MultiPartParser,FormParser,JSONParser)
     def post(self, request):
-        username = request.data['username']
-        passw = request.data['password']
+        user = None
+        if request.data['token']:
+            print(1)
+            token = request.data['token']
+            try:
+                payload = jwt.decode(token, key="secret", algorithms=['HS256'])
 
-        username_check = User.objects.filter(username=username).first()
+            except jwt.ExpiredSignatureError:
+                raise AuthenticationFailed('Вы не авторизованы!')
 
-        if check_password(passw, username_check.password):
-            user = username_check
-            # user = authenticate(request, username=username, password=passw)
-            # login(request, user)
-        else:
-            user: None
+            user = User.objects.filter(user_id=payload['id']).first()
+
+        elif request.data['username'] and request.data['password']:
+            print(2)
+            if request.data['username'] and request.data['password']:
+                username = request.data['username']
+                passw = request.data['password']
+
+                username_check = User.objects.filter(username=username).first()
+
+                if check_password(passw, username_check.password):
+                    user = username_check
+
+                payload = {
+                    'id': user.user_id,
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=180),
+                    'iat': datetime.datetime.utcnow()
+                }
+
+                token = jwt.encode(payload, key="secret", algorithm='HS256')
+
+                response = Response()
+                response.set_cookie(key='jwt', value=token, httponly=True)
+                response.data = {
+                    'jwt': token
+                }
+
+        elif request.data['token'] == None:
+            print(3)
+            token = request.COOKIES.get('jwt')
+            if not token:
+                raise AuthenticationFailed('Вы не авторизованы!!')
+
+            try:
+                payload = jwt.decode(token, key="secret", algorithms=['HS256'])
+
+            except jwt.ExpiredSignatureError:
+                raise AuthenticationFailed('Вы не авторизованы!')
+
+            user = User.objects.filter(user_id=payload['id']).first()
 
         if user is None:
             raise AuthenticationFailed('User not found!')
-
-        payload = {
-            'id': user.user_id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=180),
-            'iat': datetime.datetime.utcnow()
-        }
-
-        token = jwt.encode(payload, key="secret", algorithm='HS256')
-
-        response = Response()
-
-        response.set_cookie(key='jwt', value=token, httponly=True)
-        response.data = {
-            'jwt': token
-        }
-
-        return response
-
-
-class UserView(APIView):
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
-    def get(self, request):
-        token = request.COOKIES.get('jwt')
-
-        if not token:
-            raise AuthenticationFailed('Вы не авторизованы!!')
-
-        try:
-            payload = jwt.decode(token, key="secret", algorithms=['HS256'])
-
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Вы не авторизованы!')
-
-        user = User.objects.filter(user_id=payload['id']).first()
-        serializer_user = UserSerializer(user)
-        print(serializer_user.data['role'] == 2)
-        if serializer_user.data['role'] == 2:
-            client = Client.objects.get(user=user.user_id)
-            serializer_client = ClientSerializer(client)
-            level = Level.objects.get(level_id=serializer_client.data['level'])
-            serializer_level = LevelSerializer(level)
-            data = {'user': serializer_user.data, 'client': serializer_client.data, 'level': serializer_level.data}
         else:
-            data = {'user': serializer_user.data}
+            serializer_user = UserSerializer(user)
 
-        return Response(data)
+            if serializer_user.data['role'] == 2:
+                client = Client.objects.get(user=user.user_id)
+                serializer_client = ClientSerializer(client)
+                level = Level.objects.get(level_id=serializer_client.data['level'])
+                serializer_level = LevelSerializer(level)
+                data = {'user': serializer_user.data, 'client': serializer_client.data, 'level': serializer_level.data, 'jwt': token}
+            else:
+                data = {'user': serializer_user.data, 'jwt': token}
 
+            return Response(data)
 
 class LogoutView(APIView):
     def post(self, request):
