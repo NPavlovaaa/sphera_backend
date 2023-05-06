@@ -14,21 +14,25 @@ import datetime
 from django.db import transaction
 from django.utils import dateformat
 
-from products.models import Product
 from rest_framework.exceptions import AuthenticationFailed
-
 from users.models import User
-from users.serializer import UserSerializer
 
-# Форматирование даты
+
 class DeliveryMethodViewSet(ModelViewSet):
     queryset = DeliveryMethod.objects.all()
     serializer_class = DeliveryMethodSerializer
 
 
+
 class OrderViewSet(ModelViewSet):
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+
+class StatusViewSet(ModelViewSet):
+    queryset = Status.objects.all()
+    serializer_class = StatusSerializer
 
 
 class OrderView(APIView):
@@ -58,30 +62,34 @@ class OrderView(APIView):
             status = Status.objects.get(status_id=serializer_order.data['status'])
             serializer_status = StatusSerializer(status)
 
-            orders.append({'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::], 'delivery_date': delivery_date[1::]})
+            orders.append(
+                {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::],
+                 'delivery_date': delivery_date[1::]})
 
         return Response(orders)
 
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
     def post(self, request):
         if request.method == 'POST':
             data = {'delivery': request.data['delivery'], 'order_sum': request.data['order_sum'], 'status': 2,
-                    'order_date': datetime.datetime.now(), 'delivery_date': datetime.datetime.now(), 'dispatch_date': None,
+                    'order_date': datetime.datetime.now(), 'delivery_date': datetime.datetime.now().date(),
+                    'dispatch_date': None,
                     'package': request.data['package'], 'address': request.data['address']
-            }
+                    }
 
             serializer_class = OrderSerializer(data=data)
             if serializer_class.is_valid():
                 with transaction.atomic():
                     order = Order.objects.create(
-                    delivery = serializer_class.validated_data['delivery'],
-                    order_sum = serializer_class.validated_data['order_sum'],
-                    status = serializer_class.validated_data['status'],
-                    order_date = serializer_class.validated_data['order_date'],
-                    delivery_date = serializer_class.validated_data['delivery_date'],
-                    dispatch_date = serializer_class.validated_data['dispatch_date'],
-                    package = serializer_class.validated_data['package'],
-                    address = serializer_class.validated_data['address']
+                        delivery=serializer_class.validated_data['delivery'],
+                        order_sum=serializer_class.validated_data['order_sum'],
+                        status=serializer_class.validated_data['status'],
+                        order_date=serializer_class.validated_data['order_date'],
+                        delivery_date=serializer_class.validated_data['delivery_date'],
+                        dispatch_date=serializer_class.validated_data['dispatch_date'],
+                        package=serializer_class.validated_data['package'],
+                        address=serializer_class.validated_data['address']
                     )
                     for item in request.data['cart']:
                         Cart.objects.filter(cart_id=item['cart_id']).update(order=order.order_id, active=False)
@@ -110,6 +118,7 @@ class OrdersAdminView(APIView):
 
             for item in carts:
                 serializer_cart = CartSerializer(item)
+
                 get_order = Order.objects.get(order_id=serializer_cart.data['order'])
                 serializer_order = OrderSerializer(get_order)
                 data_orders.append(serializer_order.data)
@@ -131,6 +140,8 @@ class OrdersAdminView(APIView):
                 client = Client.objects.get(client_id=serializer_cart.data['client'])
                 serializer_client = ClientSerializer(client)
 
-                orders.append({'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::], 'delivery_date': delivery_date[1::], 'client': serializer_client.data})
+                orders.append(
+                    {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::],
+                     'delivery_date': delivery_date[1::], 'client': serializer_client.data})
 
             return Response(orders)

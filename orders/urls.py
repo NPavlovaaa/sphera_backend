@@ -7,6 +7,7 @@ from . import views
 router = routers.DefaultRouter()
 router.register(r'delivery_methods', DeliveryMethodViewSet)
 router.register(r'orders', OrderViewSet)
+router.register(r'statuses', StatusViewSet)
 
 
 urlpatterns = [

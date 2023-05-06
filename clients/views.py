@@ -8,8 +8,10 @@ from django.db import transaction
 from rest_framework import status
 
 from products.models import ProcessingMethod, Product, RoastingMethod, Weight, WeightSelection
-from products.serializer import ProcessingMethodSerializer, ProductSerializer, RoastingMethodSerializer, WeightSelectionSerializer, WeightSerializer
+from products.serializer import ProcessingMethodSerializer, ProductSerializer, RoastingMethodSerializer, \
+    WeightSelectionSerializer, WeightSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 
 class ClientViewSet(ModelViewSet):
     queryset = Client.objects.all()
@@ -28,13 +30,14 @@ class ClientView(APIView):
 
 
 class CartViewSet(ModelViewSet):
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
 
 class CartView(APIView):
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
     def get(self, request, id, cart):
         if cart == 1:
             data = Cart.objects.filter(client=id, active=True)
@@ -46,7 +49,7 @@ class CartView(APIView):
             product = Product.objects.get(product_id=cart_serializer.data['product'])
             product_serializer = ProductSerializer(product)
 
-            weight_selection =  WeightSelection.objects.get(weight_selection_id=cart_serializer.data['weight_selection'])
+            weight_selection = WeightSelection.objects.get(weight_selection_id=cart_serializer.data['weight_selection'])
             weight_selection_serializer = WeightSelectionSerializer(weight_selection)
 
             weight = Weight.objects.get(weight_id=weight_selection_serializer.data['weight'])
@@ -58,32 +61,38 @@ class CartView(APIView):
             processing = ProcessingMethod.objects.get(processing_method_id=product_serializer.data['processing_method'])
             processing_serializer = ProcessingMethodSerializer(processing)
 
-
-            carts.append({'cart_id': cart_serializer.data['cart_id'], 'product': product_serializer.data, 'count': cart_serializer.data['product_count'],
-                          'weight': weight_serializer.data['weight'], 'price': weight_selection_serializer.data['price'] * cart_serializer.data['product_count'],
-                          'roasting': roasting_serializer.data['roasting_method_name'], 'processing': processing_serializer.data['processing_method_name'],
-                          'weight_selection': weight_selection_serializer.data['weight_selection_id'], 'order': cart_serializer.data['order']})
+            carts.append({'cart_id': cart_serializer.data['cart_id'], 'product': product_serializer.data,
+                          'count': cart_serializer.data['product_count'],
+                          'weight': weight_serializer.data['weight'],
+                          'price': weight_selection_serializer.data['price'] * cart_serializer.data['product_count'],
+                          'roasting': roasting_serializer.data['roasting_method_name'],
+                          'processing': processing_serializer.data['processing_method_name'],
+                          'weight_selection': weight_selection_serializer.data['weight_selection_id'],
+                          'order': cart_serializer.data['order']})
         return Response(carts)
 
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
     def post(self, request, **kwargs):
         if request.method == 'POST':
             cart_serializer = CartSerializer(data=request.data)
             if cart_serializer.is_valid():
                 with transaction.atomic():
                     Cart.objects.create(
-                        client = cart_serializer.validated_data['client'],
-                        weight_selection = cart_serializer.validated_data['weight_selection'],
-                        product_count = 1,
-                        product =  WeightSelection.objects.get(weight_selection_id=cart_serializer.validated_data['weight_selection'].weight_selection_id).product,
-                        active = True
-                        )
+                        client=cart_serializer.validated_data['client'],
+                        weight_selection=cart_serializer.validated_data['weight_selection'],
+                        product_count=1,
+                        product=WeightSelection.objects.get(weight_selection_id=cart_serializer.validated_data[
+                            'weight_selection'].weight_selection_id).product,
+                        active=True
+                    )
                     return Response(cart_serializer.data, status=status.HTTP_201_CREATED)
             return Response(cart_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductInCartView(APIView):
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
     def get(self, request, product, client, weight_selection):
         cart = Cart.objects.get(client=client, product=product, weight_selection=weight_selection, active=True)
         cart_serializer = CartSerializer(cart)
@@ -91,13 +100,14 @@ class ProductInCartView(APIView):
 
 
 class FavoriteViewSet(ModelViewSet):
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
 
 
 class FavoriteView(APIView):
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
     def get(self, id):
         favorite = Favorite.objects.filter(client=id)
         favorites = []
@@ -107,11 +117,10 @@ class FavoriteView(APIView):
         return Response(favorites)
 
 
-
 class CartAdminView(APIView):
-    parser_classes = (MultiPartParser,FormParser,JSONParser)
-    def get(self, request):
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
+    def get(self, request):
         data = Cart.objects.filter(active=False)
 
         carts = []
@@ -120,7 +129,7 @@ class CartAdminView(APIView):
             product = Product.objects.get(product_id=cart_serializer.data['product'])
             product_serializer = ProductSerializer(product)
 
-            weight_selection =  WeightSelection.objects.get(weight_selection_id=cart_serializer.data['weight_selection'])
+            weight_selection = WeightSelection.objects.get(weight_selection_id=cart_serializer.data['weight_selection'])
             weight_selection_serializer = WeightSelectionSerializer(weight_selection)
 
             weight = Weight.objects.get(weight_id=weight_selection_serializer.data['weight'])
@@ -132,8 +141,12 @@ class CartAdminView(APIView):
             processing = ProcessingMethod.objects.get(processing_method_id=product_serializer.data['processing_method'])
             processing_serializer = ProcessingMethodSerializer(processing)
 
-            carts.append({'cart_id': cart_serializer.data['cart_id'], 'product': product_serializer.data, 'count': cart_serializer.data['product_count'],
-                          'weight': weight_serializer.data['weight'], 'price': weight_selection_serializer.data['price'] * cart_serializer.data['product_count'],
-                          'roasting': roasting_serializer.data['roasting_method_name'], 'processing': processing_serializer.data['processing_method_name'],
-                          'weight_selection': weight_selection_serializer.data['weight_selection_id'], 'order': cart_serializer.data['order']})
+            carts.append({'cart_id': cart_serializer.data['cart_id'], 'product': product_serializer.data,
+                          'count': cart_serializer.data['product_count'],
+                          'weight': weight_serializer.data['weight'],
+                          'price': weight_selection_serializer.data['price'] * cart_serializer.data['product_count'],
+                          'roasting': roasting_serializer.data['roasting_method_name'],
+                          'processing': processing_serializer.data['processing_method_name'],
+                          'weight_selection': weight_selection_serializer.data['weight_selection_id'],
+                          'order': cart_serializer.data['order']})
         return Response(carts)

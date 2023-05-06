@@ -21,8 +21,8 @@ class Order(models.Model):
     status = models.ForeignKey('Status', models.DO_NOTHING)
     delivery = models.ForeignKey('DeliveryMethod', models.DO_NOTHING)
     order_date = models.DateTimeField(blank=True, null=True)
-    delivery_date = models.DateTimeField(blank=True, null=True)
-    dispatch_date = models.DateTimeField(blank=True, null=True)
+    delivery_date = models.DateField(blank=True, null=True)
+    dispatch_date = models.DateField(blank=True, null=True)
     package = models.CharField(max_length=100, blank=True, null=True)
     address = models.CharField(max_length=200)
 
