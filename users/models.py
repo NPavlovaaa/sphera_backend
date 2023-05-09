@@ -3,7 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    def upload_to(instance, filename):
+    def upload_to(self, filename):
         return 'avatars/{filename}'.format(filename=filename)
 
     user_id = models.CharField(primary_key=True, unique=True, max_length=200)

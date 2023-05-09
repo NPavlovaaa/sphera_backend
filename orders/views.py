@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import jwt
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -36,14 +37,27 @@ class StatusViewSet(ModelViewSet):
 
 
 class OrderView(APIView):
-    def get(self, request, id):
-        carts = Cart.objects.filter(client=id, active=False)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user_role = User.objects.get(user_id=self.request.user.user_id).role.role_id
+        carts = []
+
+        if user_role == 2:
+            client = Client.objects.get(user_id=self.request.user.user_id)
+            carts = Cart.objects.filter(client=client.client_id, active=False)
+
+        elif user_role == 1:
+            carts = Cart.objects.filter(active=False)
+
         data_orders = []
         orders = []
         unique = []
 
         for item in carts:
             serializer_cart = CartSerializer(item)
+
             get_order = Order.objects.get(order_id=serializer_cart.data['order'])
             serializer_order = OrderSerializer(get_order)
             data_orders.append(serializer_order.data)
@@ -62,15 +76,20 @@ class OrderView(APIView):
             status = Status.objects.get(status_id=serializer_order.data['status'])
             serializer_status = StatusSerializer(status)
 
+            client = Client.objects.get(client_id=serializer_cart.data['client'])
+            serializer_client = ClientSerializer(client)
+
             orders.append(
                 {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::],
-                 'delivery_date': delivery_date[1::]})
+                 'delivery_date': delivery_date[1::], 'client': serializer_client.data})
 
         return Response(orders)
 
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def post(self, request):
+        # user = User.objects.filter(user_id=self.request.user.user_id)
+
         if request.method == 'POST':
             data = {'delivery': request.data['delivery'], 'order_sum': request.data['order_sum'], 'status': 2,
                     'order_date': datetime.datetime.now(), 'delivery_date': datetime.datetime.now().date(),
@@ -91,57 +110,8 @@ class OrderView(APIView):
                         package=serializer_class.validated_data['package'],
                         address=serializer_class.validated_data['address']
                     )
-                    for item in request.data['cart']:
-                        Cart.objects.filter(cart_id=item['cart_id']).update(order=order.order_id, active=False)
+                    client = Client.objects.get(user_id=self.request.user.user_id)
+                    Cart.objects.filter(client_id=client.client_id, active=True).update(order=order.order_id, active=False)
+
                 return Response(serializer_class.data)
             return Response(serializer_class.errors)
-
-
-class OrdersAdminView(APIView):
-    def get(self, request, token):
-        if not token:
-            raise AuthenticationFailed('Вы не авторизованы!!')
-
-        try:
-            payload = jwt.decode(token, key="secret", algorithms=['HS256'])
-
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed('Вы не авторизованы!')
-
-        user = User.objects.filter(user_id=payload['id']).first()
-
-        if user:
-            carts = Cart.objects.filter(active=False)
-            data_orders = []
-            orders = []
-            unique = []
-
-            for item in carts:
-                serializer_cart = CartSerializer(item)
-
-                get_order = Order.objects.get(order_id=serializer_cart.data['order'])
-                serializer_order = OrderSerializer(get_order)
-                data_orders.append(serializer_order.data)
-
-            for item in data_orders:
-                if item not in unique:
-                    unique.append(item)
-
-            for item in unique:
-                order = Order.objects.get(order_id=item['order_id'])
-                serializer_order = OrderSerializer(order)
-
-                order_date = dateformat.format(order.order_date, settings.DATE_FORMAT)
-                delivery_date = dateformat.format(order.delivery_date, settings.DATE_FORMAT)
-
-                status = Status.objects.get(status_id=serializer_order.data['status'])
-                serializer_status = StatusSerializer(status)
-
-                client = Client.objects.get(client_id=serializer_cart.data['client'])
-                serializer_client = ClientSerializer(client)
-
-                orders.append(
-                    {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::],
-                     'delivery_date': delivery_date[1::], 'client': serializer_client.data})
-
-            return Response(orders)
