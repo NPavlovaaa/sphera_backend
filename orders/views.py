@@ -80,8 +80,8 @@ class OrderView(APIView):
             serializer_client = ClientSerializer(client)
 
             orders.append(
-                {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date[1::],
-                 'delivery_date': delivery_date[1::], 'client': serializer_client.data})
+                {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date,
+                 'delivery_date': delivery_date, 'client': serializer_client.data})
 
         return Response(orders)
 
