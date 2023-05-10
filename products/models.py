@@ -2,6 +2,9 @@ from django.db import models
 
 
 class Product(models.Model):
+    def upload_to(self, filename):
+        return 'product_images/{filename}'.format(filename=filename)
+
     product_id = models.AutoField(primary_key=True)
     product_description = models.CharField(max_length=500, blank=True, null=True)
     product_name = models.CharField(max_length=100)
@@ -15,7 +18,10 @@ class Product(models.Model):
     density = models.IntegerField()
     sweetness = models.IntegerField()
     bitterness = models.IntegerField()
-    raiting = models.FloatField()
+    rating = models.FloatField()
+    image_min = models.ImageField(upload_to=upload_to, blank=True, null=True)
+    image_max = models.ImageField(upload_to=upload_to, blank=True, null=True)
+
 
     class Meta:
         managed = False
