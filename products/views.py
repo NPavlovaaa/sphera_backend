@@ -57,4 +57,3 @@ class WeightSelectionItemView(APIView):
                 if item['weight_id'] == weight['weight_id']:
                     data.append({'id': item['weight_selection_id'], 'weight': weight['weight'], 'price': item['price']})
         return Response(data)
-

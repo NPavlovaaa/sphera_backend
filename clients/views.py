@@ -127,18 +127,16 @@ class ProductInCartView(APIView):
 
     def get(self, request, product, weight_selection):
         client = Client.objects.get(user=self.request.user.user_id)
-        try:
-            cart = Cart.objects.get(client=client, product=product, weight_selection=weight_selection, active=True)
 
-        except Cart.DoesNotExist:
-            pass
+        cart = Cart.objects.get(client=client, product=product, weight_selection=weight_selection, active=True)
 
         if cart:
             cart_serializer = CartSerializer(cart)
+            data = cart_serializer.data
         else:
-            cart_serializer = None
+            data = []
 
-        return Response(cart_serializer.data)
+        return Response(data)
 
 
 class FavoriteViewSet(ModelViewSet):
