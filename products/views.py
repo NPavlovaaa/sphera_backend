@@ -1,11 +1,12 @@
 from rest_framework import permissions
 
-from products.models import ProcessingMethod, Product, RoastingMethod, Variety, Weight, WeightSelection
+from products.models import ProcessingMethod, Product, RoastingMethod, Variety, Weight, WeightSelection, ProductVariety
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from products.serializer import ProductSerializer, RoastingMethodSerializer, ProcessingMethodSerializer, VarietySerializer, WeightSelectionSerializer, WeightSerializer
+from products.serializer import ProductSerializer, RoastingMethodSerializer, ProcessingMethodSerializer, \
+    VarietySerializer, WeightSelectionSerializer, ProductVarietySerializer
 
 
 class ProductListViewSet(ModelViewSet):
@@ -31,6 +32,31 @@ class ProcessingMethodsViewSet(ModelViewSet):
 
 class VarietyViewSet(ModelViewSet):
     permission_classes = [permissions.AllowAny]
+
+    queryset = Variety.objects.all()
+    serializer_class = VarietySerializer
+
+
+class ProductVarietyViewSet(ModelViewSet):
+    permission_classes = [permissions.AllowAny]
+
+    queryset = ProductVariety.objects.all()
+    serializer_class = ProductVarietySerializer
+
+
+class ProductVarietyView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, id):
+        queryset = ProductVariety.objects.filter(product_id=id)
+        data = []
+        for item in queryset:
+            variety = Variety.objects.get(variety_id=item.variety_id)
+            variety_serializer = VarietySerializer(variety)
+            # product = Product.objects.get(product_id=item.product.product_id)
+            # product_serializer = ProductSerializer(product)
+            data.append(variety_serializer.data)
+        return Response(data)
 
     queryset = Variety.objects.all()
     serializer_class = VarietySerializer

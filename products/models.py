@@ -10,7 +10,6 @@ class Product(models.Model):
     product_name = models.CharField(max_length=100)
     category = models.ForeignKey('Category', models.DO_NOTHING)
     roasting_method = models.ForeignKey('RoastingMethod', models.DO_NOTHING)
-    variety = models.ForeignKey('Variety', models.DO_NOTHING)
     taste = models.CharField(max_length=200, blank=True, null=True)
     processing_method = models.ForeignKey('ProcessingMethod', models.DO_NOTHING)
     quantity = models.IntegerField()
@@ -36,6 +35,16 @@ class Variety(models.Model):
     class Meta:
         managed = False
         db_table = 'varieties'
+
+
+class ProductVariety(models.Model):
+    product_variety_id = models.AutoField(primary_key=True)
+    variety = models.ForeignKey('Variety', models.DO_NOTHING)
+    product = models.ForeignKey('Product', models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'product_variety'
 
 
 class RoastingMethod(models.Model):
