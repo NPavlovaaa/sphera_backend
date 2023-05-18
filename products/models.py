@@ -6,7 +6,7 @@ class Product(models.Model):
         return 'product_images/{filename}'.format(filename=filename)
 
     product_id = models.AutoField(primary_key=True)
-    product_description = models.CharField(max_length=500, blank=True, null=True)
+    product_description = models.CharField(max_length=2000, blank=True, null=True)
     product_name = models.CharField(max_length=100)
     category = models.ForeignKey('Category', models.DO_NOTHING)
     roasting_method = models.ForeignKey('RoastingMethod', models.DO_NOTHING)

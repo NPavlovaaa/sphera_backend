@@ -4,16 +4,24 @@ from products.models import ProcessingMethod, Product, RoastingMethod, Variety, 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-
+from django.core.paginator import Paginator
 from products.serializer import ProductSerializer, RoastingMethodSerializer, ProcessingMethodSerializer, \
     VarietySerializer, WeightSelectionSerializer, ProductVarietySerializer
-
 
 class ProductListViewSet(ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+
+class ProductListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, offset):
+        queryset = Product.objects.all()[offset:9+offset]
+        serializer_class = ProductSerializer(queryset, many=True)
+        return Response(serializer_class.data)
 
 
 class RoastingMethodsViewSet(ModelViewSet):
