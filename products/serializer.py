@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from products.models import Product, RoastingMethod, ProcessingMethod, Variety, Weight, WeightSelection, ProductVariety
+from products.models import Product, RoastingMethod, ProcessingMethod, Variety, Weight, WeightSelection, ProductVariety, \
+    Category
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -8,15 +9,18 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = "__all__"
 
+
 class RoastingMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoastingMethod
         fields = "__all__"
 
+
 class ProcessingMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcessingMethod
         fields = "__all__"
+
 
 class VarietySerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,4 +43,10 @@ class WeightSelectionSerializer(serializers.ModelSerializer):
 class WeightSerializer(serializers.ModelSerializer):
     class Meta:
         model = Weight
+        fields = "__all__"
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
         fields = "__all__"

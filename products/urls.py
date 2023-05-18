@@ -8,6 +8,7 @@ router.register(r'roasting', RoastingMethodsViewSet)
 router.register(r'processing', ProcessingMethodsViewSet)
 router.register(r'variety', VarietyViewSet)
 router.register(r'product_varieties', ProductVarietyViewSet)
+router.register(r'categories', CategoriesViewSet)
 
 
 urlpatterns = [

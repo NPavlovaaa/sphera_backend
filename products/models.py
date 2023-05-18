@@ -68,9 +68,13 @@ class ProcessingMethod(models.Model):
 
 
 class Category(models.Model):
+    def upload_to(self, filename):
+        return 'category_images/{filename}'.format(filename=filename)
     category_id = models.AutoField(primary_key=True)
     category_name = models.CharField(max_length=30)
     category_description = models.TextField(blank=True, null=True)
+    note = models.CharField(max_length=100)
+    image = models.ImageField(upload_to=upload_to, blank=True, null=True)
 
     class Meta:
         managed = False
