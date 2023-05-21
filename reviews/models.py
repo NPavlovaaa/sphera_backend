@@ -10,6 +10,7 @@ class Review(models.Model):
     delivery_assessment = models.IntegerField()
     product_quality_assessment = models.IntegerField()
     client = models.ForeignKey(Client, models.DO_NOTHING)
+    order = models.ForeignKey(Order, models.DO_NOTHING)
 
     class Meta:
         managed = False

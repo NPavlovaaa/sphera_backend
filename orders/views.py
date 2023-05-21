@@ -85,8 +85,6 @@ class OrderView(APIView):
 
         return Response(orders)
 
-    parser_classes = (MultiPartParser, FormParser, JSONParser)
-
     def post(self, request):
         # user = User.objects.filter(user_id=self.request.user.user_id)
 
