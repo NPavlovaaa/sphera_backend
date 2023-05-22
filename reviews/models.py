@@ -11,10 +11,12 @@ class Review(models.Model):
     product_quality_assessment = models.IntegerField()
     client = models.ForeignKey(Client, models.DO_NOTHING)
     order = models.ForeignKey(Order, models.DO_NOTHING)
+    active = models.BooleanField()
 
     class Meta:
         managed = False
         db_table = 'reviews'
+
 
 class ReviewsProduct(models.Model):
     review_product_id = models.AutoField(primary_key=True)
@@ -23,10 +25,12 @@ class ReviewsProduct(models.Model):
     product_quality_assessment = models.IntegerField()
     client = models.ForeignKey(Client, models.DO_NOTHING)
     product = models.ForeignKey(Product, models.DO_NOTHING)
+    active = models.BooleanField()
 
     class Meta:
         managed = False
         db_table = 'reviews_product'
+
 
 class Comment(models.Model):
     comment_id = models.AutoField(primary_key=True)

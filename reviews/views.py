@@ -21,7 +21,14 @@ class OrdersReviewListView(APIView):
 
     def get(self, request):
         data = []
-        queryset = Review.objects.all()
+        user_role = User.objects.get(user_id=self.request.user.user_id).role.role_id
+
+        if user_role == 2:
+            queryset = Review.objects.filter(active=1)
+
+        elif user_role == 1:
+            queryset = Review.objects.all()
+
         for item in queryset:
             review_date = dateformat.format(item.review_date, settings.DATE_FORMAT)
             serializer_class = OrderReviewsSerializer(item)
@@ -39,6 +46,16 @@ class OrdersReviewListView(APIView):
         return Response(data)
 
 
+class OrdersReviewUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user_role = User.objects.get(user_id=self.request.user.user_id).role.role_id
+        if user_role == 1:
+            review = Review.objects.filter(review_id=request.data['review_id']).update(active=True)
+            return Response(review)
+
+
 class OrdersReviewCreateView(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
@@ -54,7 +71,8 @@ class OrdersReviewCreateView(APIView):
                     'client': client_serializer.data['client_id'],
                     'review_date': datetime.datetime.now(),
                     'delivery_assessment': request.data['delivery_assessment'],
-                    'product_quality_assessment': request.data['product_quality_assessment']
+                    'product_quality_assessment': request.data['product_quality_assessment'],
+                    'active': 0
                     }
             serializer_class = OrderReviewsSerializer(data=data)
             if serializer_class.is_valid():
@@ -66,6 +84,7 @@ class OrdersReviewCreateView(APIView):
                         review_date=serializer_class.validated_data['review_date'],
                         delivery_assessment=serializer_class.validated_data['delivery_assessment'],
                         product_quality_assessment=serializer_class.validated_data['product_quality_assessment'],
+                        active=serializer_class.validated_data['active']
                     )
                 return Response(serializer_class.data)
             return Response(serializer_class.errors)

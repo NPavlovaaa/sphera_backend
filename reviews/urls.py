@@ -10,4 +10,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('reviews/', OrdersReviewListView.as_view()),
     path('create_review/', OrdersReviewCreateView.as_view()),
+    path('review_update/', OrdersReviewUpdateView.as_view()),
 ]
