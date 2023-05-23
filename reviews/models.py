@@ -11,7 +11,7 @@ class Review(models.Model):
     product_quality_assessment = models.IntegerField()
     client = models.ForeignKey(Client, models.DO_NOTHING)
     order = models.ForeignKey(Order, models.DO_NOTHING)
-    active = models.BooleanField()
+    review_status = models.ForeignKey('ReviewStatus', models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -25,11 +25,20 @@ class ReviewsProduct(models.Model):
     product_quality_assessment = models.IntegerField()
     client = models.ForeignKey(Client, models.DO_NOTHING)
     product = models.ForeignKey(Product, models.DO_NOTHING)
-    active = models.BooleanField()
+    review_status = models.ForeignKey('ReviewStatus', models.DO_NOTHING)
 
     class Meta:
         managed = False
         db_table = 'reviews_product'
+
+
+class ReviewStatus(models.Model):
+    review_status_id = models.AutoField(primary_key=True)
+    review_status_name = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'review_statuses'
 
 
 class Comment(models.Model):
