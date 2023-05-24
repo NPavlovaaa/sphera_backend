@@ -7,6 +7,8 @@ from clients.serializer import ClientSerializer, CartSerializer, FavoriteSeriali
 from django.db import transaction
 from rest_framework import status, viewsets
 
+from orders.models import Order
+from orders.serializer import OrderSerializer
 from products.models import ProcessingMethod, Product, RoastingMethod, Weight, WeightSelection
 from products.serializer import ProcessingMethodSerializer, ProductSerializer, RoastingMethodSerializer, \
     WeightSelectionSerializer, WeightSerializer
@@ -104,14 +106,19 @@ class CartOrdersView(APIView):
             processing = ProcessingMethod.objects.get(processing_method_id=product_serializer.data['processing_method'])
             processing_serializer = ProcessingMethodSerializer(processing)
 
-            carts.append({'cart_id': cart_serializer.data['cart_id'], 'product': product_serializer.data,
+            order = Order.objects.get(order_id=cart_serializer.data['order'])
+            order_serializer = OrderSerializer(order)
+
+            carts.append({'cart_id': cart_serializer.data['cart_id'],
+                          'product': product_serializer.data,
                           'count': cart_serializer.data['product_count'],
                           'weight': weight_serializer.data['weight'],
                           'price': weight_selection_serializer.data['price'] * cart_serializer.data['product_count'],
                           'roasting': roasting_serializer.data['roasting_method_name'],
                           'processing': processing_serializer.data['processing_method_name'],
                           'weight_selection': weight_selection_serializer.data['weight_selection_id'],
-                          'order': cart_serializer.data['order']})
+                          'order': cart_serializer.data['order'],
+                          'order_data': order_serializer.data})
         return Response(carts)
 
 

@@ -86,8 +86,6 @@ class OrderView(APIView):
         return Response(orders)
 
     def post(self, request):
-        # user = User.objects.filter(user_id=self.request.user.user_id)
-
         if request.method == 'POST':
             data = {'delivery': request.data['delivery'], 'order_sum': request.data['order_sum'], 'status': 2,
                     'order_date': datetime.datetime.now(), 'delivery_date': datetime.datetime.now().date(),
