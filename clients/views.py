@@ -2,8 +2,8 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from clients.models import Client, Cart, Favorite
-from clients.serializer import ClientSerializer, CartSerializer, FavoriteSerializer
+from clients.models import Client, Cart, Favorite, Level
+from clients.serializer import ClientSerializer, CartSerializer, FavoriteSerializer, LevelSerializer
 from django.db import transaction
 from rest_framework import status, viewsets
 
@@ -14,6 +14,9 @@ from products.serializer import ProcessingMethodSerializer, ProductSerializer, R
     WeightSelectionSerializer, WeightSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import permissions
+
+from reviews.models import Review, ReviewsProduct
+from users.models import User
 
 
 class ClientViewSet(ModelViewSet):
@@ -229,3 +232,52 @@ class CartAdminView(APIView):
                           'weight_selection': weight_selection_serializer.data['weight_selection_id'],
                           'order': cart_serializer.data['order']})
         return Response(carts)
+
+
+class ClientAchievementsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
+        data = []
+        user_role = User.objects.get(user_id=self.request.user.user_id).role.role_id
+
+        if user_role == 2:
+            queryset = Client.objects.filter(user=self.request.user.user_id)
+
+        elif user_role == 1:
+            queryset = Client.objects.all()
+
+        for item in queryset:
+            orders = []
+            products = []
+            unique = []
+            orders_sum = 0
+
+            client_serializer = ClientSerializer(item)
+            level = Level.objects.get(level_id=client_serializer.data['level'])
+            level_serializer = LevelSerializer(level)
+            carts = Cart.objects.filter(client=client_serializer.data['client_id'], active=False)
+            reviews = Review.objects.filter(client=client_serializer.data['client_id'], review_status=2)
+            review_product = ReviewsProduct.objects.filter(client=client_serializer.data['client_id'], review_status=2)
+            for cart in carts:
+                cart_serializer = CartSerializer(cart)
+
+                product = Product.objects.get(product_id=cart_serializer.data['product'])
+                products.append(product)
+                try:
+                    order = Order.objects.get(order_id=cart_serializer.data['order'], status=6)
+                    orders.append(order)
+                    orders_sum += order.order_sum
+                except Order.DoesNotExist:
+                    pass
+
+            for product in products:
+                if product not in unique:
+                    unique.append(product)
+
+            data.append(
+                {'level': level_serializer.data['level_name'], 'orders_sum': orders_sum,
+                 'orders_count': len(orders), 'reviews_count': len(reviews) + len(review_product),
+                 'scores': client_serializer.data['scores'], 'varieties': len(unique),
+                 })
+
+        return Response(data)

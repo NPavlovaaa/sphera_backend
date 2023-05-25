@@ -21,4 +21,5 @@ urlpatterns = [
     # path('favorite/<int:product>/', FavoriteView.as_view(), name=''),
     # path('favorite_list/', FavoriteListView.as_view(), name=''),
     path('product_cart/<int:product>/<int:weight_selection>/', ProductInCartView.as_view(), name=''),
+    path('achievements/', ClientAchievementsView.as_view(), name=''),
 ]
