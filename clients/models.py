@@ -23,6 +23,8 @@ class Client(models.Model):
 class Level(models.Model):
     level_id = models.AutoField(primary_key=True)
     level_name = models.CharField(max_length=150)
+    available_percent = models.IntegerField()
+    loyal_percent = models.IntegerField()
 
     class Meta:
         managed = False

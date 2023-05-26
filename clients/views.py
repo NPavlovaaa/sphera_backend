@@ -251,16 +251,20 @@ class ClientAchievementsView(APIView):
             products = []
             unique = []
             orders_sum = 0
+            assessment = 0
 
             client_serializer = ClientSerializer(item)
             level = Level.objects.get(level_id=client_serializer.data['level'])
             level_serializer = LevelSerializer(level)
             carts = Cart.objects.filter(client=client_serializer.data['client_id'], active=False)
             reviews = Review.objects.filter(client=client_serializer.data['client_id'], review_status=2)
-            review_product = ReviewsProduct.objects.filter(client=client_serializer.data['client_id'], review_status=2)
+            reviews_product = ReviewsProduct.objects.filter(client=client_serializer.data['client_id'], review_status=2)
+
+            for review_product in reviews_product:
+                assessment += review_product.product_quality_assessment
+
             for cart in carts:
                 cart_serializer = CartSerializer(cart)
-
                 product = Product.objects.get(product_id=cart_serializer.data['product'])
                 products.append(product)
                 try:
@@ -276,8 +280,9 @@ class ClientAchievementsView(APIView):
 
             data.append(
                 {'level': level_serializer.data['level_name'], 'orders_sum': orders_sum,
-                 'orders_count': len(orders), 'reviews_count': len(reviews) + len(review_product),
+                 'orders_count': len(orders), 'reviews_count': len(reviews) + len(reviews_product),
                  'scores': client_serializer.data['scores'], 'varieties': len(unique),
+                 'assessment': assessment / len(reviews_product)
                  })
 
         return Response(data)
