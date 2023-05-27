@@ -46,10 +46,10 @@ class OrderView(APIView):
 
         if user_role == 2:
             client = Client.objects.get(user_id=self.request.user.user_id)
-            carts = Cart.objects.filter(client=client.client_id, active=False)
+            carts = Cart.objects.filter(client=client.client_id, active=False).order_by("cart_id")
 
         elif user_role == 1:
-            carts = Cart.objects.filter(active=False)
+            carts = Cart.objects.filter(active=False).order_by("cart_id")
 
         data_orders = []
         orders = []
@@ -82,12 +82,13 @@ class OrderView(APIView):
             orders.append(
                 {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date,
                  'delivery_date': delivery_date, 'client': serializer_client.data})
+        # print(orders.sort(key=lambda x: x['order_date']))
 
         return Response(orders)
 
     def post(self, request):
         if request.method == 'POST':
-            data = {'delivery': 1, 'order_sum': request.data['order_sum'], 'status': 2,
+            data = {'delivery': 1, 'order_sum': request.data['order_sum'], 'status': 5,
                     'order_date': datetime.datetime.now(), 'delivery_date': datetime.datetime.now().date(),
                     'dispatch_date': None,
                     'package': request.data['package'], 'address': request.data['address']

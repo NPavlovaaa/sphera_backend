@@ -20,6 +20,7 @@ class Product(models.Model):
     rating = models.FloatField()
     image_min = models.ImageField(upload_to=upload_to, blank=True, null=True)
     image_max = models.ImageField(upload_to=upload_to, blank=True, null=True)
+    base_price = models.IntegerField()
 
 
     class Meta:
