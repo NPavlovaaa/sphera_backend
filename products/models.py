@@ -102,3 +102,25 @@ class WeightSelection(models.Model):
         db_table = 'weight_selection'
 
 
+class MakingMethod(models.Model):
+    def upload_to(self, filename):
+        return 'making_methods/{filename}'.format(filename=filename)
+
+    making_method_id = models.AutoField(primary_key=True)
+    making_method_name = models.CharField(max_length=100)
+    making_method_description = models.TextField(max_length=3000, null=True, blank=True)
+    image = models.ImageField(upload_to=upload_to)
+
+    class Meta:
+        managed = False
+        db_table = 'making_methods'
+
+
+class ProductMakingMethod(models.Model):
+    product_making_method_id = models.AutoField(primary_key=True)
+    product = models.ForeignKey('Product', models.DO_NOTHING)
+    making_method = models.ForeignKey('MakingMethod', models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'product_making_methods'

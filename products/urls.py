@@ -16,4 +16,5 @@ urlpatterns = [
     path('weight_selection/<int:id>/', WeightSelectionItemView.as_view(), name=''),
     path('product_list/<int:offset>/', ProductListView.as_view(), name=''),
     path('product_variety/<int:id>/', ProductVarietyView.as_view(), name=''),
+    path('making_methods/<int:id>/', ProductMakingMethodView.as_view(), name=''),
 ]
