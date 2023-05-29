@@ -17,4 +17,7 @@ urlpatterns = [
     path('product_list/<int:offset>/', ProductListView.as_view(), name=''),
     path('product_variety/<int:id>/', ProductVarietyView.as_view(), name=''),
     path('making_methods/<int:id>/', ProductMakingMethodView.as_view(), name=''),
+    path('product_warehouse/', ProductWarehouseView.as_view(), name=''),
+    path('product_consumption/<str:name>/', ProductConsumptionView.as_view(), name=''),
+    path('admin_product_change/', AdminProductChangeView.as_view(), name=''),
 ]

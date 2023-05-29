@@ -1,5 +1,7 @@
 from django.db import models
 
+from users.models import User
+
 
 class Product(models.Model):
     def upload_to(self, filename):
@@ -21,7 +23,6 @@ class Product(models.Model):
     image_min = models.ImageField(upload_to=upload_to, blank=True, null=True)
     image_max = models.ImageField(upload_to=upload_to, blank=True, null=True)
     base_price = models.IntegerField()
-
 
     class Meta:
         managed = False
@@ -71,6 +72,7 @@ class ProcessingMethod(models.Model):
 class Category(models.Model):
     def upload_to(self, filename):
         return 'category_images/{filename}'.format(filename=filename)
+
     category_id = models.AutoField(primary_key=True)
     category_name = models.CharField(max_length=30)
     category_description = models.TextField(blank=True, null=True)
@@ -124,3 +126,16 @@ class ProductMakingMethod(models.Model):
     class Meta:
         managed = False
         db_table = 'product_making_methods'
+
+
+class AdminProductChange(models.Model):
+    admin_product_change_id = models.AutoField(primary_key=True)
+    product = models.ForeignKey('Product', models.DO_NOTHING)
+    user = models.ForeignKey(User, models.DO_NOTHING)
+    count = models.IntegerField()
+    action = models.CharField(max_length=100)
+    date = models.DateField()
+
+    class Meta:
+        managed = False
+        db_table = 'admin_product_changes'

@@ -1,12 +1,24 @@
-from rest_framework import permissions
+import datetime
 
+from django.db import transaction
+from django.utils import dateformat
+from rest_framework import permissions, status
+
+from clients.models import Cart, Client
+from clients.serializer import CartSerializer, ClientSerializer
+from config import settings
+from orders.models import Order
+from orders.serializer import OrderSerializer
 from products.models import ProcessingMethod, Product, RoastingMethod, Variety, Weight, WeightSelection, ProductVariety, \
-    Category, MakingMethod, ProductMakingMethod
+    Category, MakingMethod, ProductMakingMethod, AdminProductChange
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from products.serializer import ProductSerializer, RoastingMethodSerializer, ProcessingMethodSerializer, \
-    VarietySerializer, WeightSelectionSerializer, ProductVarietySerializer, CategorySerializer, MakingMethodSerializer
+    VarietySerializer, WeightSelectionSerializer, ProductVarietySerializer, CategorySerializer, MakingMethodSerializer, \
+    WeightSerializer, AdminProductChangeSerializer
+from users.models import User
+from users.serializer import UserSerializer
 
 
 class ProductListViewSet(ModelViewSet):
@@ -112,3 +124,126 @@ class CategoriesViewSet(ModelViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+
+class ProductWarehouseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        data = []
+        unique = []
+        products = Product.objects.all()
+
+        for product in products:
+            product_serializer = ProductSerializer(product)
+            processing_method = ProcessingMethod.objects.get(
+                processing_method_id=product_serializer.data['processing_method'])
+            processing_serializer = ProcessingMethodSerializer(processing_method)
+            weight_selection = WeightSelection.objects.filter(product=product.product_id)
+            weight_serializer = WeightSelectionSerializer(weight_selection[1])
+
+            data.append({'product_name': product_serializer.data['product_name'],
+                         'processing_method': processing_serializer.data['processing_method_name'],
+                         'quantity': product_serializer.data['quantity'],
+                         'price': weight_serializer.data['price']})
+
+        for item in data:
+            if item not in unique:
+                unique.append(item)
+
+        return Response(unique)
+
+
+class ProductConsumptionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, name):
+        data = []
+        unique = []
+        data_orders = []
+        product = Product.objects.get(product_name=name)
+        product_serializer = ProductSerializer(product)
+
+        processing_method = ProcessingMethod.objects.get(
+            processing_method_id=product_serializer.data['processing_method'])
+        processing_serializer = ProcessingMethodSerializer(processing_method)
+        roasting_method = RoastingMethod.objects.get(roasting_method_id=product_serializer.data['roasting_method'])
+        roasting_serializer = RoastingMethodSerializer(roasting_method)
+
+        carts = Cart.objects.filter(product=product.product_id, active=False)
+
+        for item in carts:
+            serializer_cart = CartSerializer(item)
+
+            get_order = Order.objects.get(order_id=serializer_cart.data['order'])
+            serializer_order = OrderSerializer(get_order)
+            data_orders.append(serializer_order.data)
+
+        for item in data_orders:
+            if item not in unique:
+                unique.append(item)
+
+        for item in unique:
+            cart = Cart.objects.filter(order=item['order_id'], active=False).first()
+            serializer_cart = CartSerializer(cart)
+
+            weight_selection = WeightSelection.objects.get(weight_selection_id=serializer_cart.data['weight_selection'])
+            weight_selection_serializer = WeightSelectionSerializer(weight_selection)
+            weight = Weight.objects.get(weight_id=weight_selection.weight.weight_id)
+            weight_serializer = WeightSerializer(weight)
+
+            client = Client.objects.get(client_id=serializer_cart.data['client'])
+            order = Order.objects.get(order_id=item['order_id'])
+            order_date = dateformat.format(order.order_date, settings.DATE_FORMAT)
+
+            user = User.objects.get(user_id=client.user.user_id)
+            serializer_user = UserSerializer(user)
+
+            data.append(
+                {'product_count': serializer_cart.data['product_count'], 'date': order_date,
+                 'username': serializer_user.data['username'], 'price': weight_selection_serializer.data['price'],
+                 'weight': weight_serializer.data['weight'],
+                 'processing_method': processing_serializer.data['processing_method_name'],
+                 'roasting_method': roasting_serializer.data['roasting_method_name']})
+
+        admin_changes = AdminProductChange.objects.filter(product_id=product.product_id)
+
+        for item in admin_changes:
+            serializer_class = AdminProductChangeSerializer(item)
+            date = dateformat.format(item.date, settings.DATE_FORMAT)
+            data.append(
+                {'product_count': serializer_class.data['count'], 'date': date,
+                 'username': 'Администратор',
+                 'processing_method': processing_serializer.data['processing_method_name']})
+        return Response(data)
+
+
+class AdminProductChangeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = User.objects.get(user_id=self.request.user.user_id)
+        product = Product.objects.get(product_name=request.data['product']['product_name'])
+        if user:
+            data = {
+                'product': product.product_id,
+                'count': request.data['count'],
+                'action': request.data['action'],
+                'user': user.user_id,
+                'date': datetime.datetime.now().date()
+            }
+            serializer_class = AdminProductChangeSerializer(data=data)
+            if serializer_class.is_valid():
+                with transaction.atomic():
+                    AdminProductChange.objects.create(
+                        product=serializer_class.validated_data['product'],
+                        count=serializer_class.validated_data['count'],
+                        action=serializer_class.validated_data['action'],
+                        user=serializer_class.validated_data['user'],
+                        date=serializer_class.validated_data['date'],
+                    )
+                    product_quantity = Product.objects.get(product_id=product.product_id).quantity - request.data['count']
+                    Product.objects.filter(product_id=product.product_id).update(quantity=product_quantity)
+
+                    return Response({'data': serializer_class.data, 'status': status.HTTP_200_OK})
+            return Response({'data': serializer_class.data, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR})
