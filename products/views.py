@@ -213,7 +213,7 @@ class ProductConsumptionView(APIView):
             date = dateformat.format(item.date, settings.DATE_FORMAT)
             data.append(
                 {'product_count': serializer_class.data['count'], 'date': date,
-                 'username': 'Администратор',
+                 'username': 'Администратор', 'price': serializer_class.data['price'],
                  'processing_method': processing_serializer.data['processing_method_name']})
         return Response(data)
 
@@ -229,6 +229,7 @@ class AdminProductChangeView(APIView):
                 'product': product.product_id,
                 'count': request.data['count'],
                 'action': request.data['action'],
+                'price': request.data['price'],
                 'user': user.user_id,
                 'date': datetime.datetime.now().date()
             }
@@ -241,6 +242,7 @@ class AdminProductChangeView(APIView):
                         action=serializer_class.validated_data['action'],
                         user=serializer_class.validated_data['user'],
                         date=serializer_class.validated_data['date'],
+                        price=serializer_class.validated_data['price'],
                     )
                     product_quantity = Product.objects.get(product_id=product.product_id).quantity - request.data['count']
                     Product.objects.filter(product_id=product.product_id).update(quantity=product_quantity)

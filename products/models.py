@@ -135,6 +135,7 @@ class AdminProductChange(models.Model):
     count = models.IntegerField()
     action = models.CharField(max_length=100)
     date = models.DateField()
+    price = models.IntegerField()
 
     class Meta:
         managed = False
