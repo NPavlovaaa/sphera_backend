@@ -16,6 +16,9 @@ from django.db import transaction
 from django.utils import dateformat
 
 from rest_framework.exceptions import AuthenticationFailed
+
+from products.models import WeightSelection, Weight, Product
+from products.serializer import WeightSelectionSerializer, WeightSerializer
 from users.models import User
 
 
@@ -109,6 +112,15 @@ class OrderView(APIView):
                     )
                     client = Client.objects.get(user_id=self.request.user.user_id)
                     Cart.objects.filter(client_id=client.client_id, active=True).update(order=order.order_id, active=False)
+                    carts = Cart.objects.filter(client_id=client.client_id, order=order.order_id, active=False)
+                    for item in carts:
+                        weight_selection = WeightSelection.objects.get(weight_selection_id=item.weight_selection.weight_selection_id)
+                        weight = Weight.objects.get(weight_id=weight_selection.weight.weight_id)
+                        product_quantity = Product.objects.get(product_id=item.product.product_id).quantity
+                        if weight.weight == 250:
+                            Product.objects.filter(product_id=item.product.product_id).update(quantity=product_quantity - item.product_count * 0.25)
+                        elif weight.weight == 1000:
+                            Product.objects.filter(product_id=item.product.product_id).update(quantity=product_quantity - item.product_count)
 
                 return Response(serializer_class.data)
             return Response(serializer_class.errors)

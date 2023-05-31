@@ -202,9 +202,10 @@ class ProductConsumptionView(APIView):
             data.append(
                 {'product_count': serializer_cart.data['product_count'], 'date': order_date,
                  'username': serializer_user.data['username'], 'price': weight_selection_serializer.data['price'],
-                 'weight': weight_serializer.data['weight'],
+                 'weight': weight_serializer.data['weight'], 'action': 'Consumption',
                  'processing_method': processing_serializer.data['processing_method_name'],
-                 'roasting_method': roasting_serializer.data['roasting_method_name']})
+                 'roasting_method': roasting_serializer.data['roasting_method_name'],
+                })
 
         admin_changes = AdminProductChange.objects.filter(product_id=product.product_id)
 
@@ -214,8 +215,9 @@ class ProductConsumptionView(APIView):
             data.append(
                 {'product_count': serializer_class.data['count'], 'date': date,
                  'username': 'Администратор', 'price': serializer_class.data['price'],
-                 'processing_method': processing_serializer.data['processing_method_name']})
-        return Response(data)
+                 'processing_method': processing_serializer.data['processing_method_name'],
+                 'action': serializer_class.data['action']})
+        return Response({'data': data, 'quantity': product_serializer.data['quantity']})
 
 
 class AdminProductChangeView(APIView):
@@ -244,8 +246,23 @@ class AdminProductChangeView(APIView):
                         date=serializer_class.validated_data['date'],
                         price=serializer_class.validated_data['price'],
                     )
-                    product_quantity = Product.objects.get(product_id=product.product_id).quantity - request.data['count']
+                    if request.data['action'] == 'Consumption':
+                        product_quantity = Product.objects.get(product_id=product.product_id).quantity - float(request.data['count'])
+                    else:
+                        product_quantity = Product.objects.get(product_id=product.product_id).quantity + float(request.data['count'])
+
                     Product.objects.filter(product_id=product.product_id).update(quantity=product_quantity)
 
                     return Response({'data': serializer_class.data, 'status': status.HTTP_200_OK})
             return Response({'data': serializer_class.data, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR})
+
+
+# class ProductQuantityView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def get(self, request, name):
+#         data = []
+#         unique = []
+#         data_orders = []
+#         product = Product.objects.get(product_name=name)
+#         product_serializer = ProductSerializer(product)
