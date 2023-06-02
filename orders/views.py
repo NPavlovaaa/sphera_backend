@@ -1,5 +1,3 @@
-from django.shortcuts import render
-import jwt
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -15,17 +13,15 @@ import datetime
 from django.db import transaction
 from django.utils import dateformat
 
-from rest_framework.exceptions import AuthenticationFailed
-
-from products.models import WeightSelection, Weight, Product
-from products.serializer import WeightSelectionSerializer, WeightSerializer
-from users.models import User
+from products.models import WeightSelection, Weight, Product, AdminProductChange
+from products.serializer import WeightSelectionSerializer, WeightSerializer, AdminProductChangeSerializer
+from users.models import User, AdminIncomeChange
+from users.serializer import UserSerializer, AdminIncomeChangeSerializer
 
 
 class DeliveryMethodViewSet(ModelViewSet):
     queryset = DeliveryMethod.objects.all()
     serializer_class = DeliveryMethodSerializer
-
 
 
 class OrderViewSet(ModelViewSet):
@@ -85,7 +81,6 @@ class OrderView(APIView):
             orders.append(
                 {'status': serializer_status.data, 'order': serializer_order.data, 'order_date': order_date,
                  'delivery_date': delivery_date, 'client': serializer_client.data})
-        # print(orders.sort(key=lambda x: x['order_date']))
 
         return Response(orders)
 
@@ -111,16 +106,58 @@ class OrderView(APIView):
                         address=serializer_class.validated_data['address']
                     )
                     client = Client.objects.get(user_id=self.request.user.user_id)
-                    Cart.objects.filter(client_id=client.client_id, active=True).update(order=order.order_id, active=False)
+                    Cart.objects.filter(client_id=client.client_id, active=True).update(order=order.order_id,
+                                                                                        active=False)
                     carts = Cart.objects.filter(client_id=client.client_id, order=order.order_id, active=False)
                     for item in carts:
-                        weight_selection = WeightSelection.objects.get(weight_selection_id=item.weight_selection.weight_selection_id)
+                        weight_selection = WeightSelection.objects.get(
+                            weight_selection_id=item.weight_selection.weight_selection_id)
                         weight = Weight.objects.get(weight_id=weight_selection.weight.weight_id)
                         product_quantity = Product.objects.get(product_id=item.product.product_id).quantity
                         if weight.weight == 250:
-                            Product.objects.filter(product_id=item.product.product_id).update(quantity=product_quantity - item.product_count * 0.25)
+                            Product.objects.filter(product_id=item.product.product_id).update(
+                                quantity=product_quantity - item.product_count * 0.25)
                         elif weight.weight == 1000:
-                            Product.objects.filter(product_id=item.product.product_id).update(quantity=product_quantity - item.product_count)
+                            Product.objects.filter(product_id=item.product.product_id).update(
+                                quantity=product_quantity - item.product_count)
 
                 return Response(serializer_class.data)
             return Response(serializer_class.errors)
+
+
+class IncomeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
+        orders = []
+        data_orders = Order.objects.filter(status=2)
+
+        for item in data_orders:
+            serializer_order = OrderSerializer(item)
+            order_date = dateformat.format(item.order_date, settings.DATE_FORMAT)
+            cart = Cart.objects.filter(order=item.order_id).first()
+            client = Client.objects.get(client_id=cart.client.client_id)
+            user = User.objects.get(user_id=client.user.user_id)
+            user_serializer = UserSerializer(user)
+
+            orders.append(
+                {'order': serializer_order.data['order_id'], 'date': order_date, 'username': user_serializer.data['username'],
+                 'price': serializer_order.data['order_sum'], 'action': 'Consumption'})
+
+        admin_changes = AdminProductChange.objects.all()
+        incomes_changes = AdminIncomeChange.objects.all()
+
+        for item in admin_changes:
+            serializer_class = AdminProductChangeSerializer(item)
+            date = dateformat.format(item.date, settings.DATE_FORMAT)
+            orders.append(
+                {'date': date, 'action': serializer_class.data['action'],
+                 'username': 'Администратор', 'price': serializer_class.data['price']})
+        for item in incomes_changes:
+            serializer_class = AdminIncomeChangeSerializer(item)
+            date = dateformat.format(item.date, settings.DATE_FORMAT)
+            orders.append(
+                {'date': date, 'action': serializer_class.data['action'],
+                 'username': 'Администратор', 'price': serializer_class.data['price'],
+                 'note': serializer_class.data['note']})
+
+        return Response(orders)

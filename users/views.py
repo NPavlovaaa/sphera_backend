@@ -1,5 +1,6 @@
 import datetime
 import jwt
+from django.utils import dateformat
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
@@ -10,9 +11,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from clients.models import Client, Level
 from clients.serializer import ClientSerializer, LevelSerializer
+from config import settings
 
-from users.models import User
-from users.serializer import UserSerializer
+from users.models import User, AdminIncomeChange
+from users.serializer import UserSerializer, AdminIncomeChangeSerializer
 
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
@@ -120,3 +122,59 @@ class LogoutView(APIView):
             'message': 'success'
         }
         return response
+
+
+class CustomerView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        data =[]
+        clients = Client.objects.all()
+        for item in clients:
+            serializer_client = ClientSerializer(item)
+            user = User.objects.get(user_id=item.user.user_id)
+            user_serializer = UserSerializer(user)
+            date_joined = dateformat.format(user.date_joined, settings.DATE_FORMAT)
+            level = Level.objects.get(level_id=serializer_client.data['level'])
+            serializer_level = LevelSerializer(level)
+            data.append(
+                {'username': user_serializer.data['username'],
+                 'id': serializer_client.data['client_id'],
+                 'avatar': user_serializer.data['avatar'],
+                 'date_joined': date_joined,
+                 'first_name': serializer_client.data['first_name'],
+                 'last_name': serializer_client.data['last_name'],
+                 'phone': serializer_client.data['phone'],
+                 'level': serializer_level.data['level_name'],
+                 'scores': serializer_client.data['scores'],
+                 }
+            )
+        return Response(data)
+
+
+class AdminIncomeChangeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = User.objects.get(user_id=self.request.user.user_id)
+        if user:
+            data = {
+                'note': request.data['note'],
+                'action': request.data['action'],
+                'price': request.data['price'],
+                'user': user.user_id,
+                'date': datetime.datetime.now().date()
+            }
+            serializer_class = AdminIncomeChangeSerializer(data=data)
+            if serializer_class.is_valid():
+                with transaction.atomic():
+                    AdminIncomeChange.objects.create(
+                        note=serializer_class.validated_data['note'],
+                        action=serializer_class.validated_data['action'],
+                        user=serializer_class.validated_data['user'],
+                        date=serializer_class.validated_data['date'],
+                        price=serializer_class.validated_data['price'],
+                    )
+
+                    return Response({'data': serializer_class.data, 'status': status.HTTP_200_OK})
+            return Response({'data': serializer_class.data, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR})

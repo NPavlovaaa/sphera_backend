@@ -26,4 +26,14 @@ class Role(models.Model):
         db_table = 'roles'
 
 
+class AdminIncomeChange(models.Model):
+    admin_income_change_id = models.AutoField(primary_key=True)
+    note = models.TextField(max_length=500)
+    user = models.ForeignKey(User, models.DO_NOTHING)
+    action = models.CharField(max_length=100)
+    date = models.DateField()
+    price = models.IntegerField()
 
+    class Meta:
+        managed = False
+        db_table = 'admin_income_changes'

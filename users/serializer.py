@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from users.models import User
+from users.models import User, AdminIncomeChange
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -9,3 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class AdminIncomeChangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminIncomeChange
+        fields = "__all__"

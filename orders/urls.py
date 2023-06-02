@@ -12,4 +12,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('create_order/', OrderView.as_view()),
     path('get_orders/', OrderView.as_view(), name=''),
+    path('incomes/', IncomeView.as_view(), name=''),
 ]

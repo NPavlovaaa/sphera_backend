@@ -19,6 +19,7 @@ from products.serializer import ProductSerializer, RoastingMethodSerializer, Pro
     WeightSerializer, AdminProductChangeSerializer
 from users.models import User
 from users.serializer import UserSerializer
+from django.db.models.functions import TruncMonth
 
 
 class ProductListViewSet(ModelViewSet):
@@ -139,13 +140,22 @@ class ProductWarehouseView(APIView):
             processing_method = ProcessingMethod.objects.get(
                 processing_method_id=product_serializer.data['processing_method'])
             processing_serializer = ProcessingMethodSerializer(processing_method)
+            roasting_method = RoastingMethod.objects.get(
+                roasting_method_id=product_serializer.data['roasting_method'])
+            roasting_serializer = RoastingMethodSerializer(roasting_method)
             weight_selection = WeightSelection.objects.filter(product=product.product_id)
-            weight_serializer = WeightSelectionSerializer(weight_selection[1])
-
-            data.append({'product_name': product_serializer.data['product_name'],
+            weight_1000_serializer = WeightSelectionSerializer(weight_selection[1])
+            weight_250_serializer = WeightSelectionSerializer(weight_selection[0])
+            date = dateformat.format(product.date_added, settings.DATE_FORMAT)
+            data.append({'product_id': product_serializer.data['product_id'],
+                         'image': product_serializer.data['image_min'],
+                         'date': date,
+                         'product_name': product_serializer.data['product_name'],
                          'processing_method': processing_serializer.data['processing_method_name'],
+                         'roasting_method': roasting_serializer.data['roasting_method_name'],
                          'quantity': product_serializer.data['quantity'],
-                         'price': weight_serializer.data['price']})
+                         'price_250': weight_250_serializer.data['price'],
+                         'price_1000': weight_1000_serializer.data['price']})
 
         for item in data:
             if item not in unique:
@@ -257,12 +267,25 @@ class AdminProductChangeView(APIView):
             return Response({'data': serializer_class.data, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR})
 
 
-# class ProductQuantityView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-#
-#     def get(self, request, name):
-#         data = []
-#         unique = []
-#         data_orders = []
-#         product = Product.objects.get(product_name=name)
-#         product_serializer = ProductSerializer(product)
+class ProductCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        data = []
+        i = 1
+        while i < 13:
+            orders = Order.objects.filter(order_date__month=i)
+            order_weight = 0
+            for order in orders:
+                carts = Cart.objects.filter(order=order.order_id)
+                for cart in carts:
+                    weight_selection = WeightSelection.objects.get(weight_selection_id=cart.weight_selection.weight_selection_id)
+                    weight = Weight.objects.get(weight_id=weight_selection.weight.weight_id)
+                    order_weight += weight.weight * cart.product_count
+            data.append(order_weight/1000)
+            i += 1
+
+        # serializer = OrderSerializer(orders, many=True)
+        return Response(data)
+
+

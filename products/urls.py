@@ -20,4 +20,5 @@ urlpatterns = [
     path('product_warehouse/', ProductWarehouseView.as_view(), name=''),
     path('product_consumption/<str:name>/', ProductConsumptionView.as_view(), name=''),
     path('admin_product_change/', AdminProductChangeView.as_view(), name=''),
+    path('product_count/', ProductCountView.as_view(), name=''),
 ]

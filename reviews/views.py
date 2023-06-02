@@ -6,6 +6,7 @@ from rest_framework import permissions, status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from clients.models import Client, Level
 from clients.serializer import ClientSerializer, LevelSerializer
@@ -178,3 +179,8 @@ class ProductsReviewCreateView(APIView):
                     )
                 return Response(serializer_class.data)
             return Response(serializer_class.errors)
+
+
+class ReviewStatusesViewSet(ModelViewSet):
+    queryset = ReviewStatus.objects.all()
+    serializer_class = ReviewStatusSerializer
