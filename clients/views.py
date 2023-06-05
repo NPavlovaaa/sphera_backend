@@ -268,7 +268,7 @@ class ClientAchievementsView(APIView):
                 product = Product.objects.get(product_id=cart_serializer.data['product'])
                 products.append(product)
                 try:
-                    order = Order.objects.get(order_id=cart_serializer.data['order'], status=6)
+                    order = Order.objects.get(order_id=cart_serializer.data['order'], status='completed')
                     orders.append(order)
                     orders_sum += order.order_sum
                 except Order.DoesNotExist:

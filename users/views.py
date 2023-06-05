@@ -7,16 +7,16 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.viewsets import ModelViewSet
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from clients.models import Client, Level
 from clients.serializer import ClientSerializer, LevelSerializer
 from config import settings
 
-from users.models import User, AdminIncomeChange
-from users.serializer import UserSerializer, AdminIncomeChangeSerializer
+from users.models import User, AdminIncomeChange, Role
+from users.serializer import UserSerializer, AdminIncomeChangeSerializer, RoleSerializer
 
 from django.contrib.auth.hashers import make_password
+
 from django.db import transaction
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -28,18 +28,31 @@ class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
 
 
-class CustomAuthentication(BaseAuthentication):
-    def check_token(self, request):
-        auth = JWTAuthentication()
-        return auth.authenticate(request)
+class UserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-    def authenticate(self, request):
-        user_token = self.check_token(request)
-        if user_token is not None:
-            user, token = user_token
-            return user, token
-        else:
-            return None
+    def get(self, request):
+        queryset = User.objects.all()
+        data = []
+        for item in queryset:
+            user_serializer = UserSerializer(item)
+            date_joined = dateformat.format(item.date_joined, settings.DATE_FORMAT)
+            data.append(
+                {'username': user_serializer.data['username'],
+                 'avatar': user_serializer.data['avatar'],
+                 'date_joined': date_joined,
+                 'first_name': user_serializer.data['first_name'],
+                 'last_name': user_serializer.data['last_name'],
+                 'is_active': user_serializer.data['is_active'],
+                 }
+            )
+        return Response(data)
+
+
+
+class RoleViewSet(ModelViewSet):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
 
 
 class CreateUserAndClientModelView(CreateAPIView):
@@ -103,7 +116,7 @@ class LoginView(APIView):
                 serializer_level = LevelSerializer(level)
                 data = {'user': user_serializer.data, 'client': serializer_client.data, 'level': serializer_level.data}
 
-            elif user_role == 1:
+            else:
                 data = {'user': user_serializer.data}
 
             return Response(data)
@@ -147,6 +160,7 @@ class CustomerView(APIView):
                  'phone': serializer_client.data['phone'],
                  'level': serializer_level.data['level_name'],
                  'scores': serializer_client.data['scores'],
+                 'address': serializer_client.data['address'],
                  }
             )
         return Response(data)

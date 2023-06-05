@@ -1,3 +1,7 @@
+import hashlib
+
+import requests
+from django.http import HttpResponse
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -6,7 +10,7 @@ from rest_framework.views import APIView
 from clients.models import Cart, Client
 from clients.serializer import CartSerializer, ClientSerializer
 from config import settings
-
+import json
 from orders.models import DeliveryMethod, Order, Status
 from orders.serializer import DeliveryMethodSerializer, OrderSerializer, StatusSerializer
 import datetime
@@ -47,7 +51,7 @@ class OrderView(APIView):
             client = Client.objects.get(user_id=self.request.user.user_id)
             carts = Cart.objects.filter(client=client.client_id, active=False).order_by("cart_id")
 
-        elif user_role == 1:
+        elif user_role == 1 or user_role == 3:
             carts = Cart.objects.filter(active=False).order_by("cart_id")
 
         data_orders = []
@@ -86,11 +90,13 @@ class OrderView(APIView):
 
     def post(self, request):
         if request.method == 'POST':
-            data = {'delivery': 1, 'order_sum': request.data['order_sum'], 'status': 5,
-                    'order_date': datetime.datetime.now(), 'delivery_date': datetime.datetime.now().date(),
-                    'dispatch_date': None,
-                    'package': request.data['package'], 'address': request.data['address']
+            user = User.objects.get(user_id=self.request.user.user_id)
+            data = {'delivery': 1, 'order_sum': request.data['order_sum'], 'status': 'created',
+                    'order_date': datetime.datetime.now(), 'delivery_date': request.data['user_delivery_date'],
+                    'dispatch_date': None, 'user_delivery_time': request.data['user_delivery_time'],
+                    'package': request.data['package'], 'address': request.data['address'],
                     }
+
 
             serializer_class = OrderSerializer(data=data)
             if serializer_class.is_valid():
@@ -103,7 +109,8 @@ class OrderView(APIView):
                         delivery_date=serializer_class.validated_data['delivery_date'],
                         dispatch_date=serializer_class.validated_data['dispatch_date'],
                         package=serializer_class.validated_data['package'],
-                        address=serializer_class.validated_data['address']
+                        address=serializer_class.validated_data['address'],
+                        user_delivery_time=serializer_class.validated_data['user_delivery_time'],
                     )
                     client = Client.objects.get(user_id=self.request.user.user_id)
                     Cart.objects.filter(client_id=client.client_id, active=True).update(order=order.order_id,
@@ -121,12 +128,80 @@ class OrderView(APIView):
                             Product.objects.filter(product_id=item.product.product_id).update(
                                 quantity=product_quantity - item.product_count)
 
+                    data = {
+                        'note': 'Заказ',
+                        'action': 'Consumption',
+                        'price': order.order_sum,
+                        'user': user.user_id,
+                        'date': datetime.datetime.now().date()
+                    }
+                    serializer_class = AdminIncomeChangeSerializer(data=data)
+                    if serializer_class.is_valid():
+                        with transaction.atomic():
+                            AdminIncomeChange.objects.create(
+                                note=serializer_class.validated_data['note'],
+                                action=serializer_class.validated_data['action'],
+                                user=serializer_class.validated_data['user'],
+                                date=serializer_class.validated_data['date'],
+                                price=serializer_class.validated_data['price'],
+                            )
+
                 return Response(serializer_class.data)
             return Response(serializer_class.errors)
 
 
+class DeliveryCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if request.method == 'POST':
+            data = {'type': request.data['type'], 'matter': request.data['matter'],
+                    'total_weight_kg': request.data['total_weight_kg'], 'points': request.data['points']}
+
+            url = "https://robotapitest.dostavista.ru/api/business/1.3/create-order"
+            res = requests.post(url, json=data, headers={'Content-Type': 'application/json',
+                                                         'X-DV-Auth-Token': '80B4D1DFF00828E2749C9048B7617469E6E94844'})
+            if res.status_code == 200:
+                created_order = res.json()
+                Order.objects.filter(order_id=request.data['id']).update(
+                    tracking_url=created_order['order']['points'][0]['tracking_url'],
+                    delivery_sum=created_order['order']['payment_amount'],
+                    delivery_date=created_order['order']['points'][0]['required_start_datetime'],
+                    status='available',
+                )
+
+                return Response(created_order)
+            else:
+                return HttpResponse(res)
+
+
+class PaymentCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if request.method == 'POST':
+            token = "v2be6s3p4sa9d8yt" + request.data["PaymentId"] + "1685608375285DEMO"
+            tokensha256 = str(hashlib.sha256(token.encode()).hexdigest())
+
+            checkopl = {
+                "TerminalKey": "1685608375285DEMO",
+                "PaymentId": request.data["PaymentId"],
+                "Token": tokensha256
+            }
+
+            res = requests.post("https://securepay.tinkoff.ru/v2/GetState", json=checkopl)
+            print(res.content)
+
+            if res.status_code == 200:
+                created_order = res.json()
+                return Response(created_order)
+            else:
+                return HttpResponse(res)
+
+
 class IncomeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
         orders = []
         data_orders = Order.objects.filter(status=2)
@@ -140,7 +215,8 @@ class IncomeView(APIView):
             user_serializer = UserSerializer(user)
 
             orders.append(
-                {'order': serializer_order.data['order_id'], 'date': order_date, 'username': user_serializer.data['username'],
+                {'order': serializer_order.data['order_id'], 'date': order_date,
+                 'username': user_serializer.data['username'],
                  'price': serializer_order.data['order_sum'], 'action': 'Consumption'})
 
         admin_changes = AdminProductChange.objects.all()

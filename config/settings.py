@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-0e-$kn#qo&+jxq+gdqpxb++@qa2lx6fkr1jy9%_al!25t83^_k
 DEBUG = True
 
 CORS_ORIGIN_ALLOW_ALL = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -23,7 +23,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     "http://localhost:8000",
     'http://localhost',
-    'http://127.0.0.1'
+    'http://127.0.0.1',
+    'https://robotapitest.dostavista.ru'
 ]
 
 # Application definition
@@ -121,7 +122,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False
+USE_TZ = True
 
 DATE_FORMAT = 'd E Y'
 

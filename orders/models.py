@@ -22,9 +22,12 @@ class Order(models.Model):
     delivery = models.ForeignKey('DeliveryMethod', models.DO_NOTHING)
     order_date = models.DateTimeField(blank=True, null=True)
     delivery_date = models.DateField(blank=True, null=True)
-    dispatch_date = models.DateField(blank=True, null=True)
+    dispatch_date = models.DateTimeField(blank=True, null=True)
     package = models.CharField(max_length=100, blank=True, null=True)
     address = models.CharField(max_length=200)
+    delivery_sum = models.FloatField(null=True)
+    tracking_url = models.CharField(max_length=200, null=True)
+    user_delivery_time = models.CharField(max_length=50)
 
     class Meta:
         managed = False
@@ -32,7 +35,7 @@ class Order(models.Model):
 
 
 class Status(models.Model):
-    status_id = models.AutoField(primary_key=True)
+    status_id = models.CharField(primary_key=True, max_length=50)
     status_name = models.CharField(max_length=30)
 
     class Meta:

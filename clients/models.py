@@ -13,6 +13,7 @@ class Client(models.Model):
     birthday = models.DateField(null=True)
     level = models.ForeignKey('Level', models.DO_NOTHING)
     scores = models.IntegerField()
+    address = models.CharField(max_length=500)
 
 
     class Meta:
